@@ -4,7 +4,7 @@ import { Shell } from './layout/shell/shell';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Shell],
+  imports: [Shell],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

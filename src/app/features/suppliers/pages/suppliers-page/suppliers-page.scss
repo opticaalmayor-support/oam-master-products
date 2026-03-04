@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.dark :host {
+  background-color: #111827;
+}
+
+table {
+  tbody tr {
+    transition: background-color 0.2s ease;
+  }
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(2px);
+}
+
+button {
+  transition: all 0.2s ease;
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
