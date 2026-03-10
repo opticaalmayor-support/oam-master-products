@@ -38,8 +38,9 @@
               <label
                 [for]="'check-' + item.id"
                 class="ms-3 w-full text-sm font-medium text-gray-900 dark:text-gray-300 pointer-events-none"
-                >{{ item.label }}</label
               >
+                {{ item.label }}
+              </label>
             </li>
           }
         </ul>
@@ -60,34 +61,81 @@
               <input
                 type="text"
                 [id]="item.id"
-                (input)="onValueChange(item.id, $event)"
+                (input)="onValueChange(item.id, $event, item.type)"
                 class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                 placeholder=" "
               />
             }
+
             @case ('number') {
               <input
                 type="number"
                 [id]="item.id"
-                (input)="onValueChange(item.id, $event)"
+                (input)="onValueChange(item.id, $event, item.type)"
                 class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                 placeholder=" "
               />
             }
+
+            @case ('date') {
+              <input
+                type="date"
+                [id]="item.id"
+                (change)="onValueChange(item.id, $event, item.type)"
+                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                placeholder=" "
+              />
+            }
+
             @case ('select') {
               <select
                 [id]="item.id"
-                (change)="onValueChange(item.id, $event)"
+                (change)="onValueChange(item.id, $event, item.type)"
                 class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-gray-400 dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-primary-600 peer"
               >
-                <option value="" selected disabled>{{ item.label }}</option>
-                <option value="1">Ejemplo 1</option>
+                <option value="">{{ item.label }}</option>
+
+                @if (item.id === 'brand_id') {
+                  @for (brand of brands; track brand.id) {
+                    <option [value]="brand.id">{{ brand.name }}</option>
+                  }
+                }
+
+                @if (item.id === 'collection_id') {
+                  @for (collection of collections; track collection.id) {
+                    <option [value]="collection.id">{{ collection.name }}</option>
+                  }
+                }
+
+                @if (item.id === 'product_family') {
+                  <option value="rx">RX</option>
+                  <option value="sun">SUN</option>
+                  <option value="lens">LENS</option>
+                  <option value="accessory">Accessory</option>
+                  <option value="other">Other</option>
+                }
+
+                @if (item.id === 'gender') {
+                  <option value="men">Men</option>
+                  <option value="women">Women</option>
+                  <option value="unisex">Unisex</option>
+                  <option value="kids">Kids</option>
+                  <option value="unknown">Unknown</option>
+                }
+
+                @if (item.id === 'status') {
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="blocked">Blocked</option>
+                  <option value="discontinued">Discontinued</option>
+                }
               </select>
             }
+
             @case ('bool') {
               <select
                 [id]="item.id"
-                (change)="onValueChange(item.id, $event)"
+                (change)="onValueChange(item.id, $event, item.type)"
                 class="block py-2.5 px-0 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-gray-400 dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-primary-600 peer"
               >
                 <option value="">{{ item.label }} (Todos)</option>

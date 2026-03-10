@@ -1,36 +1,45 @@
-// Importa decoradores y utilidades de Angular
-import { Component, EventEmitter, Output, signal } from '@angular/core';
-
-// Importa CommonModule para usar directivas comunes
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  signal,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { OamBrand, OamCollection } from '../../../../../core/models/product.model';
 
-// Declara el componente standalone de filtros
+type FilterMode = 'master' | 'variant';
+
+type FilterItem = {
+  id: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'bool' | 'date';
+};
+
+type FilterGroup = {
+  name: string;
+  items: FilterItem[];
+};
+
 @Component({
-  // Selector del componente
   selector: 'app-filter-product-page',
-
-  // Indica que es standalone
   standalone: true,
-
-  // Módulos importados
   imports: [CommonModule],
-
-  // HTML asociado
   templateUrl: './filter-product-page.component.html',
 })
-// Clase del componente de filtros
-export class FilterProductPageComponent {
-  // Emisor que envía los filtros al componente padre
-  @Output() filtersChanged = new EventEmitter<any>();
+export class FilterProductPageComponent implements OnChanges {
+  @Input() mode: FilterMode = 'master';
+  @Input() brands: OamBrand[] = [];
+  @Input() collections: OamCollection[] = [];
 
-  // Objeto donde se guardan los valores activos de filtros
+  @Output() filtersChanged = new EventEmitter<Record<string, any>>();
+
   filterValues: { [key: string]: any } = {};
+  activeFilters = signal<string[]>(this.getInitialActiveFilters('master'));
 
-  // Signal que controla cuáles filtros están visibles
-  activeFilters = signal<string[]>(['upc']);
-
-  // Agrupación visual de filtros
-  filterGroups = [
+  private masterFilterGroups: FilterGroup[] = [
     {
       name: 'Búsqueda Directa',
       items: [
@@ -78,53 +87,95 @@ export class FilterProductPageComponent {
     },
   ];
 
-  // Activa o desactiva un filtro visible
+  private variantFilterGroups: FilterGroup[] = [
+    {
+      name: 'Búsqueda Directa',
+      items: [
+        { id: 'product_master_id', label: 'Product Master ID', type: 'number' },
+        { id: 'internal_sku', label: 'Internal SKU', type: 'text' },
+        { id: 'barcode', label: 'Barcode', type: 'text' },
+      ],
+    },
+    {
+      name: 'Color',
+      items: [
+        { id: 'color_code', label: 'Color Code', type: 'text' },
+        { id: 'color_description', label: 'Color Description', type: 'text' },
+      ],
+    },
+    {
+      name: 'Tamaños',
+      items: [
+        { id: 'size_lens', label: 'Size Lens', type: 'text' },
+        { id: 'size_bridge', label: 'Size Bridge', type: 'text' },
+        { id: 'size_temple', label: 'Size Temple', type: 'text' },
+        { id: 'size_std', label: 'Size Std', type: 'text' },
+      ],
+    },
+    {
+      name: 'Gestión',
+      items: [
+        { id: 'is_active', label: 'Activo', type: 'bool' },
+        { id: 'has_primary_image', label: 'Tiene Imagen Principal', type: 'bool' },
+      ],
+    },
+  ];
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['mode']) {
+      this.filterValues = {};
+      this.activeFilters.set(this.getInitialActiveFilters(this.mode));
+      this.emitFilters();
+    }
+  }
+
+  get filterGroups(): FilterGroup[] {
+    return this.mode === 'variant' ? this.variantFilterGroups : this.masterFilterGroups;
+  }
+
+  private getInitialActiveFilters(mode: FilterMode): string[] {
+    return mode === 'variant' ? ['internal_sku'] : ['upc'];
+  }
+
   toggleFilter(fieldId: string) {
-    // Actualiza la lista de filtros activos
     this.activeFilters.update((current) => {
-      // Si ya estaba activo
       if (current.includes(fieldId)) {
-        // Elimina su valor del objeto
         delete this.filterValues[fieldId];
-
-        // Emite el nuevo estado de filtros
         this.emitFilters();
-
-        // Devuelve la lista sin ese filtro
         return current.filter((id) => id !== fieldId);
-      } else {
-        // Si no estaba activo, lo agrega a la lista
-        return [...current, fieldId];
       }
+
+      return [...current, fieldId];
     });
   }
 
-  // Verifica si un filtro está visible
   isFilterActive(fieldId: string) {
-    // Retorna true si el filtro existe en activeFilters
     return this.activeFilters().includes(fieldId);
   }
 
-  // Captura cambios de valor en inputs y selects
-  onValueChange(fieldId: string, event: Event) {
-    // Convierte el target en input o select
+  onValueChange(fieldId: string, event: Event, type?: string) {
     const target = event.target as HTMLInputElement | HTMLSelectElement;
+    let value: any = target.value;
 
-    // Guarda el valor actual del filtro
-    this.filterValues[fieldId] = target.value;
-
-    // Si el valor está vacío, elimina la propiedad
-    if (target.value === '') {
+    if (value === '') {
       delete this.filterValues[fieldId];
+      this.emitFilters();
+      return;
     }
 
-    // Emite los filtros actualizados al padre
+    if (type === 'number') {
+      value = Number(value);
+    }
+
+    if (type === 'bool') {
+      value = value === '1';
+    }
+
+    this.filterValues[fieldId] = value;
     this.emitFilters();
   }
 
-  // Método privado para emitir una copia del objeto de filtros
   private emitFilters() {
-    // Emite una copia del objeto para asegurar detección de cambios
     this.filtersChanged.emit({ ...this.filterValues });
   }
 }

@@ -22,7 +22,13 @@
   </div>
 
   <!-- Componente hijo de filtros -->
-  <app-filter-product-page (filtersChanged)="onUpdateFilters($event)"></app-filter-product-page>
+  <app-filter-product-page
+    [mode]="'master'"
+    [brands]="brands()"
+    [collections]="collections()"
+    (filtersChanged)="onUpdateFilters($event)"
+  >
+  </app-filter-product-page>
 
   <!-- Tabla contenedora -->
   <div class="mt-6 overflow-x-auto shadow-md sm:rounded-lg bg-white">
@@ -116,191 +122,393 @@
   <!-- Overlay oscuro cuando el drawer está abierto -->
   @if (showForm()) {
     <div class="fixed inset-0 bg-black/30 z-40" (click)="closeForm()"></div>
+
+    <!-- Drawer lateral derecho -->
+    <div
+      class="fixed top-0 right-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 transform transition-transform duration-300"
+      [class.translate-x-full]="!showForm()"
+      [class.translate-x-0]="showForm()"
+    >
+      <!-- Encabezado del drawer -->
+      <div class="flex items-center justify-between px-6 py-4 border-b">
+        <!-- Título dinámico -->
+        <h2 class="text-lg font-bold text-gray-800">
+          {{ isEditMode() ? 'Editar Producto' : 'Nuevo Producto' }}
+        </h2>
+
+        <!-- Botón cerrar -->
+        <button type="button" (click)="closeForm()" class="text-gray-500 hover:text-red-500">
+          ✕
+        </button>
+      </div>
+
+      <!-- Cuerpo del drawer -->
+      <div class="p-6 overflow-y-auto h-[calc(100%-73px)] space-y-8">
+        <!-- ========================= -->
+        <!-- FORMULARIO PRODUCT MASTER -->
+        <!-- ========================= -->
+        <section>
+          <div class="mb-4">
+            <h3 class="text-base font-semibold text-gray-800">Información del Product Master</h3>
+            <p class="text-sm text-gray-500 mt-1">
+              Completa los datos principales del producto maestro.
+            </p>
+          </div>
+
+          <!-- Formulario reactivo de Product Master -->
+          <form
+            [formGroup]="productForm"
+            (ngSubmit)="onSaveProduct()"
+            class="grid grid-cols-1 md:grid-cols-2 gap-5"
+          >
+            <!-- Campo OAM Key -->
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                OAM Key *
+              </label>
+              <input
+                formControlName="oam_key"
+                type="text"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                placeholder="Ej: RAYBAN-RX123-BLK"
+              />
+            </div>
+
+            <!-- Campo familia -->
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Familia *
+              </label>
+              <select
+                formControlName="product_family"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              >
+                <option value="rx">RX</option>
+                <option value="sun">SUN</option>
+                <option value="lens">LENS</option>
+                <option value="accessory">Accessory</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <!-- Campo género -->
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Género *
+              </label>
+              <select
+                formControlName="gender"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              >
+                <option value="men">Men</option>
+                <option value="women">Women</option>
+                <option value="unisex">Unisex</option>
+                <option value="kids">Kids</option>
+              </select>
+            </div>
+
+            <!-- Campo estado -->
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Estado *
+              </label>
+              <select
+                formControlName="status"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              >
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="blocked">Blocked</option>
+                <option value="discontinued">Discontinued</option>
+              </select>
+            </div>
+
+            <!-- Campo template_name -->
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Template Name *
+              </label>
+              <input
+                formControlName="template_name"
+                type="text"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              />
+            </div>
+
+            <!-- Campo UPC -->
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                UPC / EAN
+              </label>
+              <input
+                formControlName="upc"
+                type="text"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              />
+            </div>
+
+            <!-- Campo brand_id -->
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Marca
+              </label>
+              <select
+                formControlName="brand_id"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              >
+                <option [ngValue]="null">Seleccionar marca</option>
+                @for (brand of brands(); track brand.id) {
+                  <option [ngValue]="brand.id">{{ brand.name }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Campo collection_id -->
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Colección
+              </label>
+              <select
+                formControlName="collection_id"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              >
+                <option [ngValue]="null">Seleccionar colección</option>
+                @for (collection of collections(); track collection.id) {
+                  <option [ngValue]="collection.id">{{ collection.name }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Campo description_short -->
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Descripción Corta
+              </label>
+              <textarea
+                formControlName="description_short"
+                rows="3"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              ></textarea>
+            </div>
+
+            <!-- Campo made_in -->
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Made In
+              </label>
+              <input
+                formControlName="made_in"
+                type="text"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              />
+            </div>
+
+            <!-- Acciones del formulario Product Master -->
+            <div class="md:col-span-2 flex justify-end gap-3 pt-4 border-t">
+              <button
+                type="button"
+                (click)="closeForm()"
+                class="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                [disabled]="productForm.invalid"
+                class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {{ isEditMode() ? 'Actualizar Producto' : 'Guardar Producto' }}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- ========================= -->
+        <!-- FORMULARIO CREAR VARIANTE -->
+        <!-- ========================= -->
+        <section class="border-t pt-8">
+          <div class="mb-4">
+            <h3 class="text-base font-semibold text-gray-800">Crear Variante</h3>
+            <p class="text-sm text-gray-500 mt-1">
+              Crea una variante asociada a este Product Master.
+            </p>
+          </div>
+
+          <!-- Mensaje cuando aún no existe un master persistido -->
+          @if (!canManageVariants()) {
+            <div
+              class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500"
+            >
+              Guarda primero el Product Master para habilitar la creación de variantes.
+            </div>
+          } @else {
+            <!-- Formulario reactivo de Variante -->
+            <form
+              [formGroup]="variantForm"
+              (ngSubmit)="onSaveVariant()"
+              class="grid grid-cols-1 md:grid-cols-2 gap-5"
+            >
+              <!-- Internal SKU -->
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Internal SKU *
+                </label>
+                <input
+                  formControlName="internal_sku"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="Ej: RB-3447-BLK-50"
+                />
+              </div>
+
+              <!-- Barcode -->
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Barcode
+                </label>
+                <input
+                  formControlName="barcode"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="Ej: 1234567890123"
+                />
+              </div>
+
+              <!-- Color Code -->
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Color Code
+                </label>
+                <input
+                  formControlName="color_code"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="Ej: BLK"
+                />
+              </div>
+
+              <!-- Color Description -->
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Color Description
+                </label>
+                <input
+                  formControlName="color_description"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="Ej: Black"
+                />
+              </div>
+
+              <!-- Size Lens -->
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Size Lens
+                </label>
+                <input
+                  formControlName="size_lens"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="Ej: 50"
+                />
+              </div>
+
+              <!-- Size Bridge -->
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Size Bridge
+                </label>
+                <input
+                  formControlName="size_bridge"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="Ej: 21"
+                />
+              </div>
+
+              <!-- Size Temple -->
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Size Temple
+                </label>
+                <input
+                  formControlName="size_temple"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="Ej: 145"
+                />
+              </div>
+
+              <!-- Size Std -->
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Size Std
+                </label>
+                <input
+                  formControlName="size_std"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="Ej: 50-21-145"
+                />
+              </div>
+
+              <!-- Primary Image URL -->
+              <div class="md:col-span-2">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Primary Image URL
+                </label>
+                <input
+                  formControlName="primary_image_url"
+                  type="text"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <!-- Is Active -->
+              <div class="md:col-span-2">
+                <label class="inline-flex items-center gap-2">
+                  <input type="checkbox" formControlName="is_active" />
+                  <span class="text-sm text-gray-700">Variante activa</span>
+                </label>
+              </div>
+
+              <!-- Acciones del formulario Variante -->
+              <div class="md:col-span-2 flex justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  (click)="
+                    variantForm.reset({
+                      internal_sku: '',
+                      barcode: '',
+                      color_code: '',
+                      color_description: '',
+                      size_lens: '',
+                      size_bridge: '',
+                      size_temple: '',
+                      size_std: '',
+                      primary_image_url: '',
+                      is_active: true,
+                    })
+                  "
+                  class="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50"
+                >
+                  Limpiar
+                </button>
+
+                <button
+                  type="submit"
+                  [disabled]="variantForm.invalid"
+                  class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  Guardar Variante
+                </button>
+              </div>
+            </form>
+          }
+        </section>
+      </div>
+    </div>
   }
-
-  <!-- Drawer lateral derecho -->
-  <div
-    class="fixed top-0 right-0 h-full w-full max-w-xl bg-white shadow-2xl z-50 transform transition-transform duration-300"
-    [class.translate-x-full]="!showForm()"
-    [class.translate-x-0]="showForm()"
-  >
-    <!-- Encabezado del drawer -->
-    <div class="flex items-center justify-between px-6 py-4 border-b">
-      <!-- Título dinámico -->
-      <h2 class="text-lg font-bold text-gray-800">
-        {{ isEditMode() ? 'Editar Producto' : 'Nuevo Producto' }}
-      </h2>
-
-      <!-- Botón cerrar -->
-      <button type="button" (click)="closeForm()" class="text-gray-500 hover:text-red-500">
-        ✕
-      </button>
-    </div>
-
-    <!-- Cuerpo del formulario -->
-    <div class="p-6 overflow-y-auto h-[calc(100%-73px)]">
-      <!-- Formulario reactivo -->
-      <form
-        [formGroup]="productForm"
-        (ngSubmit)="onSaveProduct()"
-        class="grid grid-cols-1 md:grid-cols-2 gap-5"
-      >
-        <!-- Campo OAM Key -->
-        <div class="md:col-span-2">
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            OAM Key *
-          </label>
-          <input
-            formControlName="oam_key"
-            type="text"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-            placeholder="Ej: RAYBAN-RX123-BLK"
-          />
-        </div>
-
-        <!-- Campo familia -->
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Familia *
-          </label>
-          <select
-            formControlName="product_family"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          >
-            <option value="rx">RX</option>
-            <option value="sun">SUN</option>
-            <option value="lens">LENS</option>
-            <option value="accessory">Accessory</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <!-- Campo género -->
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Género *
-          </label>
-          <select
-            formControlName="gender"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          >
-            <option value="men">Men</option>
-            <option value="women">Women</option>
-            <option value="unisex">Unisex</option>
-            <option value="kids">Kids</option>
-            <option value="unknown">Unknown</option>
-          </select>
-        </div>
-
-        <!-- Campo estado -->
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Estado *
-          </label>
-          <select
-            formControlName="status"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          >
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
-            <option value="blocked">Blocked</option>
-            <option value="discontinued">Discontinued</option>
-          </select>
-        </div>
-
-        <!-- Campo template_name -->
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Template Name *
-          </label>
-          <input
-            formControlName="template_name"
-            type="text"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-
-        <!-- Campo UPC -->
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            UPC / EAN
-          </label>
-          <input
-            formControlName="upc"
-            type="text"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-
-        <!-- Campo brand_id -->
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Marca
-          </label>
-          <input
-            formControlName="brand_id"
-            type="number"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-
-        <!-- Campo collection_id -->
-        <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Colección
-          </label>
-          <input
-            formControlName="collection_id"
-            type="number"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-
-        <!-- Campo description_short -->
-        <div class="md:col-span-2">
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Descripción Corta
-          </label>
-          <textarea
-            formControlName="description_short"
-            rows="3"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          ></textarea>
-        </div>
-
-        <!-- Campo made_in -->
-        <div class="md:col-span-2">
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Made In
-          </label>
-          <input
-            formControlName="made_in"
-            type="text"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-
-        <!-- Acciones del formulario -->
-        <div class="md:col-span-2 flex justify-end gap-3 pt-4 border-t">
-          <!-- Botón cancelar -->
-          <button
-            type="button"
-            (click)="closeForm()"
-            class="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50"
-          >
-            Cancelar
-          </button>
-
-          <!-- Botón guardar -->
-          <button
-            type="submit"
-            [disabled]="productForm.invalid"
-            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            {{ isEditMode() ? 'Actualizar Producto' : 'Guardar Producto' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
 </div>
