@@ -8,10 +8,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 // Importa la función centralizada que construye URLs del API
-import { getApiUrl } from '../../config/api.config';
+import { getApiUrl } from '../../../config/api.config';
 
 // Importa el modelo de variante y el tipo de filtros de variantes
-import { OamProductVariant, VariantQueryParams } from '../../../core/models/product.model';
+import { OamProductVariant, VariantQueryParams } from '../../../../core/models/product.model';
 
 // Declara el servicio como inyectable global
 @Injectable({

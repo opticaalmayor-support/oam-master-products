@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { getApiUrl } from '../../config/api.config';
-import { OamProductMaster } from '../../../core/models/product.model';
+import { getApiUrl } from '../../../config/api.config';
+import { OamProductMaster } from '../../../../core/models/product.model';
 
 @Injectable({
   providedIn: 'root',

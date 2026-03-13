@@ -1,0 +1,405 @@
+<div class="relative w-full">
+  <app-sidebar
+    [open]="leftPanelOpen()"
+    position="left"
+    widthClass="max-w-md"
+    title="Catálogos"
+    (closed)="closeLeftPanel()"
+  >
+    <div class="space-y-8">
+      <section class="border rounded-lg p-4">
+        <div class="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-base font-semibold text-gray-800">{{ brandSectionTitle }}</h3>
+            <p class="text-sm text-gray-500">Crea, consulta o edita marcas del catálogo maestro.</p>
+          </div>
+
+          <button
+            type="button"
+            class="rounded border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            (click)="createBrand.emit()"
+          >
+            Nueva
+          </button>
+        </div>
+
+        <app-brand-modal
+          [embedded]="true"
+          [mode]="brandMode"
+          [brand]="selectedBrand"
+          (submitted)="onBrandSubmitted($event)"
+        >
+        </app-brand-modal>
+
+        <div class="mt-5 border-t pt-4">
+          <h4 class="mb-3 text-sm font-semibold text-gray-800">Marcas registradas</h4>
+
+          <div
+            *ngIf="!brands.length"
+            class="rounded border border-dashed p-3 text-sm text-gray-500"
+          >
+            No hay marcas registradas.
+          </div>
+
+          <div *ngIf="brands.length" class="space-y-2">
+            <div
+              *ngFor="let brand of brands"
+              class="flex items-center justify-between gap-3 rounded border px-3 py-2 text-sm"
+            >
+              <button
+                type="button"
+                class="text-left font-medium text-slate-700 hover:text-blue-600"
+                (click)="onBrandNameClick(brand)"
+              >
+                {{ brand.name }}
+              </button>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                  (click)="showBrand.emit(brand)"
+                >
+                  Ver
+                </button>
+
+                <button
+                  type="button"
+                  class="rounded border px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
+                  (click)="editBrand.emit(brand)"
+                >
+                  Editar
+                </button>
+
+                <button
+                  type="button"
+                  class="rounded border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                  (click)="deleteBrand.emit(brand)"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="border rounded-lg p-4">
+        <div class="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-base font-semibold text-gray-800">{{ collectionSectionTitle }}</h3>
+            <p class="text-sm text-gray-500">
+              Crea, consulta o edita colecciones vinculadas a la marca seleccionada.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="rounded border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            (click)="createCollection.emit()"
+          >
+            Nueva
+          </button>
+        </div>
+
+        <div
+          *ngIf="!(productForm.get('brand_id')?.value ?? null)"
+          class="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700"
+        >
+          Primero selecciona o crea una marca en el Product Master para habilitar la colección.
+        </div>
+
+        <app-collection-modal
+          [embedded]="true"
+          [mode]="collectionMode"
+          [collection]="selectedCollection"
+          [brands]="brands"
+          [lockedBrandId]="productForm.get('brand_id')?.value ?? null"
+          (submitted)="onCollectionSubmitted($event)"
+        >
+        </app-collection-modal>
+
+        <div class="mt-5 border-t pt-4">
+          <h4 class="mb-3 text-sm font-semibold text-gray-800">
+            Colecciones de la marca seleccionada
+          </h4>
+
+          <div
+            *ngIf="!(productForm.get('brand_id')?.value ?? null)"
+            class="rounded border border-dashed p-3 text-sm text-gray-500"
+          >
+            Selecciona una marca para ver sus colecciones.
+          </div>
+
+          <div
+            *ngIf="(productForm.get('brand_id')?.value ?? null) && !visibleCollections.length"
+            class="rounded border border-dashed p-3 text-sm text-gray-500"
+          >
+            No hay colecciones registradas para esta marca.
+          </div>
+
+          <div *ngIf="visibleCollections.length" class="space-y-2">
+            <div
+              *ngFor="let collection of visibleCollections"
+              class="flex items-center justify-between gap-3 rounded border px-3 py-2 text-sm"
+            >
+              <div class="min-w-0">
+                <button
+                  type="button"
+                  class="block truncate text-left font-medium text-slate-700 hover:text-blue-600"
+                  (click)="onCollectionNameClick(collection)"
+                >
+                  {{ collection.name }}
+                </button>
+
+                <div class="mt-1 text-xs text-gray-500">
+                  {{ collection.slug }} · {{ collection.family_hint || 'unknown' }}
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                  (click)="showCollection.emit(collection)"
+                >
+                  Ver
+                </button>
+
+                <button
+                  type="button"
+                  class="rounded border px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
+                  (click)="editCollection.emit(collection)"
+                >
+                  Editar
+                </button>
+
+                <button
+                  type="button"
+                  class="rounded border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                  (click)="deleteCollection.emit(collection)"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </app-sidebar>
+
+  <div class="w-full">
+    <app-create-crud
+      *ngIf="showForm && !isEditMode"
+      [form]="productForm"
+      [config]="createConfig"
+      (closed)="closed.emit()"
+      (submitted)="saveProduct.emit()"
+      (fieldAction)="openFieldPanel($event)"
+    >
+    </app-create-crud>
+
+    <app-edit-crud
+      *ngIf="showForm && isEditMode"
+      [form]="productForm"
+      [config]="editConfig"
+      (closed)="closed.emit()"
+      (submitted)="saveProduct.emit()"
+      (fieldAction)="openFieldPanel($event)"
+    >
+    </app-edit-crud>
+
+    <div class="mt-6 border-t pt-6" *ngIf="showForm">
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold mb-1">Variantes</h3>
+          <p class="text-sm text-gray-500">
+            Mini lista y creación rápida de variantes asociadas a este Product Master.
+          </p>
+        </div>
+
+        <button
+          *ngIf="selectedProductId"
+          type="button"
+          class="rounded border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          (click)="createVariant.emit()"
+        >
+          Nueva variante
+        </button>
+      </div>
+
+      <div
+        *ngIf="!selectedProductId"
+        class="rounded border border-dashed p-4 text-sm text-gray-500"
+      >
+        Guarda primero el Product Master para habilitar la creación y visualización de variantes.
+      </div>
+
+      <div *ngIf="selectedProductId" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div class="rounded border p-4">
+          <h4 class="mb-4 text-sm font-semibold text-gray-800">
+            {{ isEditingVariant ? 'Editar variante' : 'Nueva variante' }}
+          </h4>
+
+          <form [formGroup]="variantForm" class="space-y-4">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700">Internal SKU</label>
+              <input
+                type="text"
+                formControlName="internal_sku"
+                class="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700">Barcode</label>
+              <input
+                type="text"
+                formControlName="barcode"
+                class="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700">Color Code</label>
+                <input
+                  type="text"
+                  formControlName="color_code"
+                  class="w-full rounded border px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700"
+                  >Color Description</label
+                >
+                <input
+                  type="text"
+                  formControlName="color_description"
+                  class="w-full rounded border px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700">Lens</label>
+                <input
+                  type="text"
+                  formControlName="size_lens"
+                  class="w-full rounded border px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700">Bridge</label>
+                <input
+                  type="text"
+                  formControlName="size_bridge"
+                  class="w-full rounded border px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700">Temple</label>
+                <input
+                  type="text"
+                  formControlName="size_temple"
+                  class="w-full rounded border px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700">Size Std</label>
+              <input
+                type="text"
+                formControlName="size_std"
+                class="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700">Primary Image URL</label>
+              <input
+                type="text"
+                formControlName="primary_image_url"
+                class="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" formControlName="is_active" />
+              Variante activa
+            </label>
+
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="rounded bg-primary-600 px-4 py-2 text-white"
+                (click)="saveVariant.emit()"
+              >
+                {{ isEditingVariant ? 'Actualizar variante' : 'Guardar variante' }}
+              </button>
+
+              <button
+                type="button"
+                class="rounded border px-4 py-2 text-gray-700 hover:bg-gray-50"
+                (click)="createVariant.emit()"
+              >
+                Limpiar
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="rounded border p-4">
+          <h4 class="mb-4 text-sm font-semibold text-gray-800">Variantes registradas</h4>
+
+          <div
+            *ngIf="!productVariants.length"
+            class="rounded border border-dashed p-3 text-sm text-gray-500"
+          >
+            No hay variantes registradas para este producto.
+          </div>
+
+          <div *ngIf="productVariants.length" class="space-y-3">
+            <div *ngFor="let variant of productVariants" class="rounded border p-3 text-sm">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="font-medium text-slate-800">
+                    {{ variant.internal_sku || 'Sin SKU' }}
+                  </div>
+                  <div class="mt-1 text-xs text-gray-500">
+                    {{ variant.color_description || variant.color_code || 'Sin color' }}
+                    · {{ variant.size_std || 'Sin talla' }}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="rounded border px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
+                    (click)="editVariant.emit(variant)"
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    type="button"
+                    class="rounded border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                    (click)="deleteVariant.emit(variant.id)"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

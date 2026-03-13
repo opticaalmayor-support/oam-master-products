@@ -1,14 +1,16 @@
 export const API_CONFIG = {
-  // baseUrl: 'http://127.0.0.1:8000',
-  baseUrl: 'http://new-api.test',
+  baseUrl: 'http://127.0.0.1:8000',
+  // baseUrl: 'http://new-api.test',
   endpoints: {
     suppliers: '/api/maestro/suppliers',
     products: '/api/maestro/products',
     categories: '/api/maestro/categories',
     brands: '/api/maestro/brands',
-    OamProduct: '/api/maestro/OamProduct',
-    OamProductVariant: '/api/maestro/OamProductVariant',
-    OamProductVariantByMaster: '/api/maestro/OamProduct/{productMasterId}/variants',
+    OamProduct: '/api/maestro/product',
+    OamProductVariant: '/api/maestro/product-variants',
+    OamProductVariantByMaster: '/api/maestro/product/{productMasterId}/variants',
+    collection: '/api/maestro/collections',
+    CollectionByBrand: '/api/maestro/collections/brand/{brandId}',
   },
 };
 

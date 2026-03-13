@@ -1,0 +1,267 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+  @if (config.sections?.length) {
+    @for (section of config.sections; track section.key) {
+      <section class="space-y-4">
+        @if (section.title) {
+          <div>
+            <h3 class="text-base font-semibold text-gray-800">{{ section.title }}</h3>
+
+            @if (section.description) {
+              <p class="text-sm text-gray-500 mt-1">
+                {{ section.description }}
+              </p>
+            }
+          </div>
+        }
+
+        <div
+          class="grid gap-5"
+          [class.grid-cols-1]="(section.columns || 1) === 1"
+          [class.md:grid-cols-2]="(section.columns || 2) === 2"
+        >
+          @for (field of section.fields; track trackByKey($index, field)) {
+            <div [class.md:col-span-2]="field.colSpan === 2">
+              @if (field.type !== 'checkbox') {
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  {{ field.label }}
+                  @if (field.required) {
+                    *
+                  }
+                </label>
+              }
+
+              @switch (field.type) {
+                @case ('text') {
+                  <input
+                    [formControlName]="field.key.toString()"
+                    type="text"
+                    [placeholder]="field.placeholder || ''"
+                    [readonly]="field.readonly || false"
+                    [disabled]="field.disabled || false"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  />
+                }
+
+                @case ('number') {
+                  <input
+                    [formControlName]="field.key.toString()"
+                    type="number"
+                    [placeholder]="field.placeholder || ''"
+                    [readonly]="field.readonly || false"
+                    [disabled]="field.disabled || false"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  />
+                }
+
+                @case ('textarea') {
+                  <textarea
+                    [formControlName]="field.key.toString()"
+                    [rows]="field.rows || 3"
+                    [placeholder]="field.placeholder || ''"
+                    [readonly]="field.readonly || false"
+                    [disabled]="field.disabled || false"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  ></textarea>
+                }
+
+                @case ('select') {
+                  <select
+                    [formControlName]="field.key.toString()"
+                    [disabled]="field.disabled || false"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  >
+                    <option [ngValue]="null">Seleccionar</option>
+
+                    @for (option of field.options || []; track option.value) {
+                      <option [ngValue]="option.value">
+                        {{ option.label }}
+                      </option>
+                    }
+                  </select>
+                }
+
+                @case ('checkbox') {
+                  <label class="mt-2 inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      [formControlName]="field.key.toString()"
+                      [disabled]="field.disabled || false"
+                    />
+                    <span class="text-sm text-gray-700">
+                      {{ field.hint || field.label }}
+                    </span>
+                  </label>
+                }
+
+                @case ('date') {
+                  <input
+                    [formControlName]="field.key.toString()"
+                    type="date"
+                    [disabled]="field.disabled || false"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  />
+                }
+
+                @case ('url') {
+                  <input
+                    [formControlName]="field.key.toString()"
+                    type="url"
+                    [placeholder]="field.placeholder || ''"
+                    [readonly]="field.readonly || false"
+                    [disabled]="field.disabled || false"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  />
+                }
+              }
+
+              @if (field.hint && field.type !== 'checkbox') {
+                <p class="mt-1 text-xs text-gray-500">
+                  {{ field.hint }}
+                </p>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+  } @else {
+    <div
+      class="grid gap-5"
+      [class.grid-cols-1]="(config.columns || 1) === 1"
+      [class.md:grid-cols-2]="(config.columns || 2) === 2"
+    >
+      @for (field of fields; track trackByKey($index, field)) {
+        <div [class.md:col-span-2]="field.colSpan === 2">
+          @if (field.type !== 'checkbox') {
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
+              {{ field.label }}
+              @if (field.required) {
+                *
+              }
+            </label>
+          }
+
+          @switch (field.type) {
+            @case ('text') {
+              <input
+                [formControlName]="field.key.toString()"
+                type="text"
+                [placeholder]="field.placeholder || ''"
+                [readonly]="field.readonly || false"
+                [disabled]="field.disabled || false"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              />
+            }
+
+            @case ('number') {
+              <input
+                [formControlName]="field.key.toString()"
+                type="number"
+                [placeholder]="field.placeholder || ''"
+                [readonly]="field.readonly || false"
+                [disabled]="field.disabled || false"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              />
+            }
+
+            @case ('textarea') {
+              <textarea
+                [formControlName]="field.key.toString()"
+                [rows]="field.rows || 3"
+                [placeholder]="field.placeholder || ''"
+                [readonly]="field.readonly || false"
+                [disabled]="field.disabled || false"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              ></textarea>
+            }
+
+            @case ('select') {
+              <div class="mt-1 flex items-center gap-2">
+                <select
+                  [formControlName]="field.key.toString()"
+                  [disabled]="field.disabled || false"
+                  class="block w-full rounded-md border-gray-300 shadow-sm"
+                >
+                  <option [ngValue]="null">Seleccionar</option>
+
+                  @for (option of field.options || []; track option.value) {
+                    <option [ngValue]="option.value">
+                      {{ option.label }}
+                    </option>
+                  }
+                </select>
+
+                @if (field.key === 'brand_id' || field.key === 'collection_id') {
+                  <button
+                    type="button"
+                    (click)="onFieldAction(field.key.toString())"
+                    class="shrink-0 px-3 py-2 border rounded-md text-sm text-blue-600 hover:bg-blue-50"
+                  >
+                    +
+                  </button>
+                }
+              </div>
+            }
+
+            @case ('checkbox') {
+              <label class="mt-2 inline-flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  [formControlName]="field.key.toString()"
+                  [disabled]="field.disabled || false"
+                />
+                <span class="text-sm text-gray-700">
+                  {{ field.hint || field.label }}
+                </span>
+              </label>
+            }
+
+            @case ('date') {
+              <input
+                [formControlName]="field.key.toString()"
+                type="date"
+                [disabled]="field.disabled || false"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              />
+            }
+
+            @case ('url') {
+              <input
+                [formControlName]="field.key.toString()"
+                type="url"
+                [placeholder]="field.placeholder || ''"
+                [readonly]="field.readonly || false"
+                [disabled]="field.disabled || false"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+              />
+            }
+          }
+
+          @if (field.hint && field.type !== 'checkbox') {
+            <p class="mt-1 text-xs text-gray-500">
+              {{ field.hint }}
+            </p>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <div class="flex justify-end gap-3 pt-4 border-t">
+    <button
+      type="button"
+      (click)="onClose()"
+      class="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50"
+    >
+      {{ config.actions?.cancelLabel || 'Cancelar' }}
+    </button>
+
+    <button
+      type="submit"
+      [disabled]="form.invalid"
+      class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+    >
+      {{ config.actions?.submitLabel || 'Actualizar' }}
+    </button>
+  </div>
+</form>

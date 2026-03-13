@@ -1,0 +1,9 @@
+<div class="bg-white shadow-md sm:rounded-lg p-6">
+  <div class="mb-6">
+    <h2 class="text-lg font-bold text-gray-800">{{ title }}</h2>
+  </div>
+
+  @if (contentTemplate) {
+    <ng-container *ngTemplateOutlet="contentTemplate; context: context"></ng-container>
+  }
+</div>

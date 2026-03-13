@@ -1,27 +1,16 @@
-<!-- Contenedor principal de la pantalla -->
-<div class="p-4 relative">
-  <!-- Encabezado con título y botón de nuevo producto -->
-  <div class="flex justify-between items-center mb-4">
-    <!-- Título de la página -->
-    <h1 class="text-2xl font-bold text-gray-800">Maestro de Productos</h1>
+<div class="p-6 space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold">Product Master</h1>
 
-    <!-- Botón para abrir el drawer en modo creación -->
     <button
-      (click)="openCreateModal()"
-      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+      type="button"
+      class="rounded bg-primary-600 px-4 py-2 text-white"
+      (click)="openCreateForm()"
     >
-      <!-- Ícono de suma -->
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <!-- Trazo del ícono -->
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-
-      <!-- Texto del botón -->
       Nuevo Producto
     </button>
   </div>
 
-  <!-- Componente hijo de filtros -->
   <app-filter-product-page
     [mode]="'master'"
     [brands]="brands()"
@@ -30,485 +19,94 @@
   >
   </app-filter-product-page>
 
-  <!-- Tabla contenedora -->
-  <div class="mt-6 overflow-x-auto shadow-md sm:rounded-lg bg-white">
-    <!-- Tabla principal -->
-    <table class="w-full text-sm text-left text-gray-500">
-      <!-- Encabezado de columnas -->
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
-        <tr>
-          <th class="px-6 py-3">OAM Key</th>
-          <th class="px-6 py-3">Familia</th>
-          <th class="px-6 py-3">Marca</th>
-          <th class="px-6 py-3">Género</th>
-          <th class="px-6 py-3 text-center">Estado</th>
-          <th class="px-6 py-3 text-right">Acciones</th>
-        </tr>
-      </thead>
-
-      <!-- Cuerpo de la tabla -->
-      <tbody>
-        <!-- Si está cargando, muestra fila de carga -->
-        @if (loading()) {
-          <tr>
-            <td colspan="6" class="text-center py-10">Cargando productos...</td>
-          </tr>
-        } @else {
-          <!-- Recorre la lista de productos -->
-          @for (product of products(); track product.id) {
-            <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
-              <!-- OAM Key -->
-              <td class="px-6 py-4 font-bold text-gray-900">{{ product.oam_key }}</td>
-
-              <!-- Familia -->
-              <td class="px-6 py-4">{{ product.product_family }}</td>
-
-              <!-- Marca -->
-              <td class="px-6 py-4">
-                <span class="px-2 py-1 bg-gray-100 rounded text-xs font-medium">
-                  {{ product.oam_brand?.name || 'N/A' }}
-                </span>
-              </td>
-
-              <!-- Género -->
-              <td class="px-6 py-4 uppercase text-xs">{{ product.gender }}</td>
-
-              <!-- Estado -->
-              <td class="px-6 py-4 text-center">
-                <span
-                  [class]="
-                    product.status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  "
-                  class="px-2.5 py-0.5 rounded-full text-xs font-medium"
-                >
-                  {{ product.status }}
-                </span>
-              </td>
-
-              <!-- Acciones -->
-              <td class="px-6 py-4 text-right space-x-2">
-                <!-- Botón editar -->
-                <button
-                  (click)="openEditModal(product)"
-                  class="font-medium text-blue-600 hover:underline"
-                >
-                  Editar
-                </button>
-
-                <!-- Botón eliminar -->
-                <button
-                  (click)="onDeleteProduct(product.id)"
-                  class="font-medium text-red-600 hover:underline"
-                >
-                  Eliminar
-                </button>
-              </td>
-            </tr>
-          } @empty {
-            <!-- Estado vacío -->
-            <tr>
-              <td colspan="6" class="text-center py-10 text-gray-400 italic">
-                No se encontraron productos con estos filtros.
-              </td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Overlay oscuro cuando el drawer está abierto -->
-  @if (showForm()) {
-    <div class="fixed inset-0 bg-black/30 z-40" (click)="closeForm()"></div>
-
-    <!-- Drawer lateral derecho -->
-    <div
-      class="fixed top-0 right-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 transform transition-transform duration-300"
-      [class.translate-x-full]="!showForm()"
-      [class.translate-x-0]="showForm()"
+  <div class="rounded border bg-white overflow-hidden">
+    <app-selection-toolbar
+      [selectedCount]="selectedProductIds.length"
+      entityLabel="productos"
+      (edit)="editSelectedProduct()"
+      (delete)="deleteSelectedProducts()"
+      (clear)="clearProductSelection()"
     >
-      <!-- Encabezado del drawer -->
-      <div class="flex items-center justify-between px-6 py-4 border-b">
-        <!-- Título dinámico -->
-        <h2 class="text-lg font-bold text-gray-800">
-          {{ isEditMode() ? 'Editar Producto' : 'Nuevo Producto' }}
-        </h2>
+    </app-selection-toolbar>
 
-        <!-- Botón cerrar -->
-        <button type="button" (click)="closeForm()" class="text-gray-500 hover:text-red-500">
-          ✕
-        </button>
-      </div>
+    <app-product-master-table
+      [items]="products()"
+      [selectedIds]="selectedProductIds"
+      [inlineEditDisabled]="sequentialEditActive()"
+      (selectionChange)="onProductSelectionChange($event)"
+      (editRow)="editProduct($event)"
+      (deleteRow)="deleteProduct($event)"
+      (inlineSave)="onInlineSaveProduct($event)"
+    >
+    </app-product-master-table>
+  </div>
+  @if (sequentialEditActive()) {
+    <div class="mb-4 rounded border border-indigo-200 bg-indigo-50 p-3">
+      <div class="flex items-center justify-between">
+        <div class="text-sm font-medium text-indigo-800">
+          Editando {{ sequentialEditCurrentStep }} de {{ sequentialEditTotal }}
+        </div>
 
-      <!-- Cuerpo del drawer -->
-      <div class="p-6 overflow-y-auto h-[calc(100%-73px)] space-y-8">
-        <!-- ========================= -->
-        <!-- FORMULARIO PRODUCT MASTER -->
-        <!-- ========================= -->
-        <section>
-          <div class="mb-4">
-            <h3 class="text-base font-semibold text-gray-800">Información del Product Master</h3>
-            <p class="text-sm text-gray-500 mt-1">
-              Completa los datos principales del producto maestro.
-            </p>
-          </div>
-
-          <!-- Formulario reactivo de Product Master -->
-          <form
-            [formGroup]="productForm"
-            (ngSubmit)="onSaveProduct()"
-            class="grid grid-cols-1 md:grid-cols-2 gap-5"
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="rounded border border-indigo-300 bg-white px-3 py-1 text-sm text-indigo-700"
+            (click)="skipSequentialProduct()"
           >
-            <!-- Campo OAM Key -->
-            <div class="md:col-span-2">
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                OAM Key *
-              </label>
-              <input
-                formControlName="oam_key"
-                type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                placeholder="Ej: RAYBAN-RX123-BLK"
-              />
-            </div>
+            Omitir
+          </button>
 
-            <!-- Campo familia -->
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Familia *
-              </label>
-              <select
-                formControlName="product_family"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              >
-                <option value="rx">RX</option>
-                <option value="sun">SUN</option>
-                <option value="lens">LENS</option>
-                <option value="accessory">Accessory</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <!-- Campo género -->
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Género *
-              </label>
-              <select
-                formControlName="gender"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              >
-                <option value="men">Men</option>
-                <option value="women">Women</option>
-                <option value="unisex">Unisex</option>
-                <option value="kids">Kids</option>
-              </select>
-            </div>
-
-            <!-- Campo estado -->
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Estado *
-              </label>
-              <select
-                formControlName="status"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              >
-                <option value="active">Active</option>
-                <option value="draft">Draft</option>
-                <option value="blocked">Blocked</option>
-                <option value="discontinued">Discontinued</option>
-              </select>
-            </div>
-
-            <!-- Campo template_name -->
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Template Name *
-              </label>
-              <input
-                formControlName="template_name"
-                type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              />
-            </div>
-
-            <!-- Campo UPC -->
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                UPC / EAN
-              </label>
-              <input
-                formControlName="upc"
-                type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              />
-            </div>
-
-            <!-- Campo brand_id -->
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Marca
-              </label>
-              <select
-                formControlName="brand_id"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              >
-                <option [ngValue]="null">Seleccionar marca</option>
-                @for (brand of brands(); track brand.id) {
-                  <option [ngValue]="brand.id">{{ brand.name }}</option>
-                }
-              </select>
-            </div>
-
-            <!-- Campo collection_id -->
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Colección
-              </label>
-              <select
-                formControlName="collection_id"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              >
-                <option [ngValue]="null">Seleccionar colección</option>
-                @for (collection of collections(); track collection.id) {
-                  <option [ngValue]="collection.id">{{ collection.name }}</option>
-                }
-              </select>
-            </div>
-
-            <!-- Campo description_short -->
-            <div class="md:col-span-2">
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Descripción Corta
-              </label>
-              <textarea
-                formControlName="description_short"
-                rows="3"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              ></textarea>
-            </div>
-
-            <!-- Campo made_in -->
-            <div class="md:col-span-2">
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Made In
-              </label>
-              <input
-                formControlName="made_in"
-                type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              />
-            </div>
-
-            <!-- Acciones del formulario Product Master -->
-            <div class="md:col-span-2 flex justify-end gap-3 pt-4 border-t">
-              <button
-                type="button"
-                (click)="closeForm()"
-                class="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="submit"
-                [disabled]="productForm.invalid"
-                class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                {{ isEditMode() ? 'Actualizar Producto' : 'Guardar Producto' }}
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <!-- ========================= -->
-        <!-- FORMULARIO CREAR VARIANTE -->
-        <!-- ========================= -->
-        <section class="border-t pt-8">
-          <div class="mb-4">
-            <h3 class="text-base font-semibold text-gray-800">Crear Variante</h3>
-            <p class="text-sm text-gray-500 mt-1">
-              Crea una variante asociada a este Product Master.
-            </p>
-          </div>
-
-          <!-- Mensaje cuando aún no existe un master persistido -->
-          @if (!canManageVariants()) {
-            <div
-              class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-500"
-            >
-              Guarda primero el Product Master para habilitar la creación de variantes.
-            </div>
-          } @else {
-            <!-- Formulario reactivo de Variante -->
-            <form
-              [formGroup]="variantForm"
-              (ngSubmit)="onSaveVariant()"
-              class="grid grid-cols-1 md:grid-cols-2 gap-5"
-            >
-              <!-- Internal SKU -->
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Internal SKU *
-                </label>
-                <input
-                  formControlName="internal_sku"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="Ej: RB-3447-BLK-50"
-                />
-              </div>
-
-              <!-- Barcode -->
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Barcode
-                </label>
-                <input
-                  formControlName="barcode"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="Ej: 1234567890123"
-                />
-              </div>
-
-              <!-- Color Code -->
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Color Code
-                </label>
-                <input
-                  formControlName="color_code"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="Ej: BLK"
-                />
-              </div>
-
-              <!-- Color Description -->
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Color Description
-                </label>
-                <input
-                  formControlName="color_description"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="Ej: Black"
-                />
-              </div>
-
-              <!-- Size Lens -->
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Size Lens
-                </label>
-                <input
-                  formControlName="size_lens"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="Ej: 50"
-                />
-              </div>
-
-              <!-- Size Bridge -->
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Size Bridge
-                </label>
-                <input
-                  formControlName="size_bridge"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="Ej: 21"
-                />
-              </div>
-
-              <!-- Size Temple -->
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Size Temple
-                </label>
-                <input
-                  formControlName="size_temple"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="Ej: 145"
-                />
-              </div>
-
-              <!-- Size Std -->
-              <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Size Std
-                </label>
-                <input
-                  formControlName="size_std"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="Ej: 50-21-145"
-                />
-              </div>
-
-              <!-- Primary Image URL -->
-              <div class="md:col-span-2">
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Primary Image URL
-                </label>
-                <input
-                  formControlName="primary_image_url"
-                  type="text"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  placeholder="https://..."
-                />
-              </div>
-
-              <!-- Is Active -->
-              <div class="md:col-span-2">
-                <label class="inline-flex items-center gap-2">
-                  <input type="checkbox" formControlName="is_active" />
-                  <span class="text-sm text-gray-700">Variante activa</span>
-                </label>
-              </div>
-
-              <!-- Acciones del formulario Variante -->
-              <div class="md:col-span-2 flex justify-end gap-3 pt-4 border-t">
-                <button
-                  type="button"
-                  (click)="
-                    variantForm.reset({
-                      internal_sku: '',
-                      barcode: '',
-                      color_code: '',
-                      color_description: '',
-                      size_lens: '',
-                      size_bridge: '',
-                      size_temple: '',
-                      size_std: '',
-                      primary_image_url: '',
-                      is_active: true,
-                    })
-                  "
-                  class="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50"
-                >
-                  Limpiar
-                </button>
-
-                <button
-                  type="submit"
-                  [disabled]="variantForm.invalid"
-                  class="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  Guardar Variante
-                </button>
-              </div>
-            </form>
-          }
-        </section>
+          <button
+            type="button"
+            class="rounded border border-red-300 bg-white px-3 py-1 text-sm text-red-700"
+            (click)="cancelSequentialEdit()"
+          >
+            Cancelar secuencia
+          </button>
+        </div>
       </div>
     </div>
   }
+  <app-sidebar
+    [open]="showForm()"
+    position="right"
+    widthClass="max-w-4xl"
+    [title]="isEditMode() ? 'Editar Product Master' : 'Nuevo Product Master'"
+    (closed)="closeForm()"
+  >
+    <app-product-master-workspace
+      [showForm]="showForm()"
+      [isEditMode]="isEditMode()"
+      [productForm]="productForm"
+      [variantForm]="variantForm"
+      [createConfig]="computedProductCreateConfig"
+      [editConfig]="computedProductEditConfig"
+      [brands]="brands()"
+      [collections]="collections()"
+      [selectedProductId]="selectedProductId()"
+      [productVariants]="productVariants()"
+      [selectedBrand]="selectedBrand()"
+      [selectedCollection]="selectedCollection()"
+      [brandMode]="brandMode()"
+      [collectionMode]="collectionMode()"
+      (closed)="closeForm()"
+      (saveProduct)="onSaveProduct()"
+      (saveVariant)="onSaveVariant()"
+      (brandSubmitted)="onBrandSubmitted($event)"
+      (collectionSubmitted)="onCollectionSubmitted($event)"
+      (createBrand)="startCreateBrand()"
+      (editBrand)="startEditBrand($event)"
+      (showBrand)="showBrand($event)"
+      (deleteBrand)="deleteBrand($event)"
+      (createCollection)="startCreateCollection()"
+      (editCollection)="startEditCollection($event)"
+      (showCollection)="showCollection($event)"
+      (deleteCollection)="deleteCollection($event)"
+      [selectedVariantId]="selectedVariantId()"
+      (editVariant)="editProductVariant($event)"
+      (deleteVariant)="deleteProductVariant($event)"
+      (createVariant)="resetVariantForm()"
+    >
+    </app-product-master-workspace>
+  </app-sidebar>
 </div>

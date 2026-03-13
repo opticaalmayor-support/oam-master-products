@@ -1,0 +1,74 @@
+<div class="rounded border bg-white overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="w-10 px-3 py-3 text-center">
+          <input
+            type="checkbox"
+            [checked]="areAllSelected()"
+            (change)="toggleAll($any($event.target).checked)"
+          />
+        </th>
+        <th class="px-4 py-3 text-left">ID</th>
+        <th class="px-4 py-3 text-left">OAM Key</th>
+        <th class="px-4 py-3 text-left">Template</th>
+        <th class="px-4 py-3 text-left">Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (item of items; track item.id) {
+        <tr class="border-t">
+          <td class="px-3 py-3 text-center">
+            <input
+              type="checkbox"
+              [checked]="isSelected(item.id)"
+              (change)="toggleSelection(item.id)"
+            />
+          </td>
+
+          <td class="px-4 py-3">{{ item.id }}</td>
+
+          <td class="px-4 py-3">
+            <app-editable-cell
+              [value]="item.oam_key || ''"
+              [disabled]="inlineEditDisabled"
+              placeholder="OAM Key"
+              (save)="emitInlineSave(item.id, 'oam_key', $event)"
+            >
+            </app-editable-cell>
+          </td>
+
+          <td class="px-4 py-3">
+            <app-editable-cell
+              [value]="item.template_name || ''"
+              [disabled]="inlineEditDisabled"
+              placeholder="Template name"
+              (save)="emitInlineSave(item.id, 'template_name', $event)"
+            >
+            </app-editable-cell>
+          </td>
+
+          <td class="px-4 py-3">
+            <app-editable-cell
+              [value]="item.status || ''"
+              type="select"
+              [disabled]="inlineEditDisabled"
+              [options]="statusOptions"
+              (save)="emitInlineSave(item.id, 'status', $event)"
+            >
+            </app-editable-cell>
+          </td>
+        </tr>
+      }
+
+      @if (items.length === 0) {
+        <tr>
+          <td colspan="6" class="px-4 py-6 text-center text-gray-500">
+            No hay productos disponibles.
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

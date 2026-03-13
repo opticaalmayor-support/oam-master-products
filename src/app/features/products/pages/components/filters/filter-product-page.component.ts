@@ -5,6 +5,7 @@ import {
   Output,
   signal,
   OnChanges,
+  OnInit,
   SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -29,15 +30,18 @@ type FilterGroup = {
   imports: [CommonModule],
   templateUrl: './filter-product-page.component.html',
 })
-export class FilterProductPageComponent implements OnChanges {
+export class FilterProductPageComponent implements OnInit, OnChanges {
   @Input() mode: FilterMode = 'master';
   @Input() brands: OamBrand[] = [];
   @Input() collections: OamCollection[] = [];
 
   @Output() filtersChanged = new EventEmitter<Record<string, any>>();
 
-  filterValues: { [key: string]: any } = {};
-  activeFilters = signal<string[]>(this.getInitialActiveFilters('master'));
+  filterValues: Record<string, any> = {};
+  activeFilters = signal<string[]>([]);
+  openDropdown = signal<string | null>(null);
+
+  private initialized = false;
 
   private masterFilterGroups: FilterGroup[] = [
     {
@@ -121,11 +125,24 @@ export class FilterProductPageComponent implements OnChanges {
     },
   ];
 
+  ngOnInit(): void {
+    this.activeFilters.set(this.getInitialActiveFilters(this.mode));
+    this.initialized = true;
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['mode']) {
-      this.filterValues = {};
-      this.activeFilters.set(this.getInitialActiveFilters(this.mode));
-      this.emitFilters();
+    if (!this.initialized) {
+      return;
+    }
+
+    if (changes['mode'] && !changes['mode'].firstChange) {
+      const previousMode = changes['mode'].previousValue as FilterMode | undefined;
+      const currentMode = changes['mode'].currentValue as FilterMode;
+
+      if (previousMode !== currentMode) {
+        this.resetState(false);
+        this.openDropdown.set(null);
+      }
     }
   }
 
@@ -137,11 +154,19 @@ export class FilterProductPageComponent implements OnChanges {
     return mode === 'variant' ? ['internal_sku'] : ['upc'];
   }
 
-  toggleFilter(fieldId: string) {
+  toggleDropdown(groupName: string): void {
+    const current = this.openDropdown();
+    this.openDropdown.set(current === groupName ? null : groupName);
+  }
+
+  isDropdownOpen(groupName: string): boolean {
+    return this.openDropdown() === groupName;
+  }
+
+  toggleFilter(fieldId: string): void {
     this.activeFilters.update((current) => {
       if (current.includes(fieldId)) {
         delete this.filterValues[fieldId];
-        this.emitFilters();
         return current.filter((id) => id !== fieldId);
       }
 
@@ -149,17 +174,20 @@ export class FilterProductPageComponent implements OnChanges {
     });
   }
 
-  isFilterActive(fieldId: string) {
+  isFilterActive(fieldId: string): boolean {
     return this.activeFilters().includes(fieldId);
   }
 
-  onValueChange(fieldId: string, event: Event, type?: string) {
+  getFilterValue(fieldId: string): any {
+    return this.filterValues[fieldId] ?? '';
+  }
+
+  onValueChange(fieldId: string, event: Event, type?: string): void {
     const target = event.target as HTMLInputElement | HTMLSelectElement;
     let value: any = target.value;
 
     if (value === '') {
       delete this.filterValues[fieldId];
-      this.emitFilters();
       return;
     }
 
@@ -172,10 +200,67 @@ export class FilterProductPageComponent implements OnChanges {
     }
 
     this.filterValues[fieldId] = value;
-    this.emitFilters();
   }
 
-  private emitFilters() {
+  applyFilters(): void {
     this.filtersChanged.emit({ ...this.filterValues });
+  }
+
+  clearFilters(): void {
+    this.resetState(true);
+    this.openDropdown.set(null);
+  }
+
+  private resetState(emit = false): void {
+    this.filterValues = {};
+    this.activeFilters.set(this.getInitialActiveFilters(this.mode));
+
+    if (emit) {
+      this.filtersChanged.emit({});
+    }
+  }
+
+  getSelectOptions(fieldId: string): Array<{ value: string | number; label: string }> {
+    switch (fieldId) {
+      case 'brand_id':
+        return this.brands.map((brand) => ({
+          value: brand.id,
+          label: brand.name,
+        }));
+
+      case 'collection_id':
+        return this.collections.map((collection) => ({
+          value: collection.id,
+          label: collection.name,
+        }));
+
+      case 'product_family':
+        return [
+          { value: 'rx', label: 'RX' },
+          { value: 'sun', label: 'Sun' },
+          { value: 'lens', label: 'Lens' },
+          { value: 'accessory', label: 'Accessory' },
+          { value: 'other', label: 'Other' },
+        ];
+
+      case 'gender':
+        return [
+          { value: 'male', label: 'Male' },
+          { value: 'female', label: 'Female' },
+          { value: 'unisex', label: 'Unisex' },
+          { value: 'kids', label: 'Kids' },
+        ];
+
+      case 'status':
+        return [
+          { value: 'draft', label: 'Draft' },
+          { value: 'pending', label: 'Pending' },
+          { value: 'approved', label: 'Approved' },
+          { value: 'archived', label: 'Archived' },
+        ];
+
+      default:
+        return [];
+    }
   }
 }

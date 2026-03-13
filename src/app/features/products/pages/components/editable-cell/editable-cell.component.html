@@ -1,0 +1,38 @@
+@if (!editing) {
+  <div
+    class="min-h-[24px] cursor-pointer rounded px-1 py-0.5 hover:bg-slate-50"
+    [class.opacity-50]="disabled"
+    (dblclick)="startEdit()"
+    [title]="disabled ? 'Edición bloqueada' : 'Doble click para editar'"
+  >
+    {{ value || '—' }}
+  </div>
+} @else {
+  @if (type === 'text') {
+    <input
+      type="text"
+      class="w-full rounded border px-2 py-1 text-sm"
+      [(ngModel)]="draftValue"
+      [placeholder]="placeholder"
+      (keydown)="onKeydown($event)"
+      (blur)="commit()"
+      autofocus
+    />
+  }
+
+  @if (type === 'select') {
+    <select
+      class="w-full rounded border px-2 py-1 text-sm"
+      [(ngModel)]="draftValue"
+      (change)="commit()"
+      (keydown)="onKeydown($event)"
+      autofocus
+    >
+      @for (option of options; track option.value) {
+        <option [value]="option.value">
+          {{ option.label }}
+        </option>
+      }
+    </select>
+  }
+}
