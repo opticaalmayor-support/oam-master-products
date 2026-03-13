@@ -1,0 +1,92 @@
+<div class="rounded border bg-white overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="w-10 px-3 py-3 text-center">
+          <input
+            type="checkbox"
+            [checked]="areAllSelected()"
+            (change)="toggleAll($any($event.target).checked)"
+          />
+        </th>
+        <th class="px-4 py-3 text-left">ID</th>
+        <th class="px-4 py-3 text-left">SKU</th>
+        <th class="px-4 py-3 text-left">Barcode</th>
+        <th class="px-4 py-3 text-left">Color</th>
+        <th class="px-4 py-3 text-left">Size</th>
+        <th class="px-4 py-3 text-left">Active</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (item of items; track item.id) {
+        <tr class="border-t">
+          <td class="px-3 py-3 text-center">
+            <input
+              type="checkbox"
+              [checked]="isSelected(item.id)"
+              (change)="toggleSelection(item.id)"
+            />
+          </td>
+
+          <td class="px-4 py-3">{{ item.id }}</td>
+
+          <td class="px-4 py-3">
+            <app-editable-cell
+              [value]="item.is_active ? '1' : '0'"
+              type="select"
+              [disabled]="inlineEditDisabled"
+              [options]="activeOptions"
+              (save)="emitInlineSave(item.id, 'is_active', $event)"
+            />
+          </td>
+
+          <td class="px-4 py-3">
+            <app-editable-cell
+              [value]="item.barcode ?? ''"
+              [disabled]="inlineEditDisabled"
+              placeholder="Barcode"
+              (save)="emitInlineSave(item.id, 'barcode', $event)"
+            />
+          </td>
+
+          <td class="px-4 py-3">
+            <app-editable-cell
+              [value]="item.color_description ?? ''"
+              [disabled]="inlineEditDisabled"
+              placeholder="Color description"
+              (save)="emitInlineSave(item.id, 'color_description', $event)"
+            />
+          </td>
+
+          <td class="px-4 py-3">
+            <app-editable-cell
+              [value]="item.size_std ?? ''"
+              [disabled]="inlineEditDisabled"
+              placeholder="Size"
+              (save)="emitInlineSave(item.id, 'size_std', $event)"
+            />
+          </td>
+
+          <td class="px-4 py-3">
+            <app-editable-cell
+              [value]="item.is_active ? '1' : '0'"
+              type="select"
+              [disabled]="inlineEditDisabled"
+              [options]="activeOptions"
+              (save)="emitInlineSave(item.id, 'is_active', $event)"
+            />
+          </td>
+        </tr>
+      }
+
+      @if (items.length === 0) {
+        <tr>
+          <td colspan="8" class="px-4 py-6 text-center text-gray-500">
+            No hay variantes disponibles.
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
