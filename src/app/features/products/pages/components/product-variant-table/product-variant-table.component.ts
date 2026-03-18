@@ -9,6 +9,20 @@ type InlineEditEvent = {
   value: string;
 };
 
+type VariantTableColumnKey =
+  | 'id'
+  | 'thumbnail'
+  | 'internal_sku'
+  | 'barcode'
+  | 'color_code'
+  | 'color_description'
+  | 'size_lens'
+  | 'size_bridge'
+  | 'size_temple'
+  | 'size_std'
+  | 'product_master_id'
+  | 'is_active';
+
 @Component({
   selector: 'app-product-variant-table',
   standalone: true,
@@ -19,6 +33,16 @@ export class ProductVariantTableComponent {
   @Input() items: OamProductVariant[] = [];
   @Input() selectedIds: number[] = [];
   @Input() inlineEditDisabled = false;
+  @Input() blockBarcodeInlineEdit = false;
+  @Input() visibleColumns: VariantTableColumnKey[] = [
+    'id',
+    'thumbnail',
+    'internal_sku',
+    'barcode',
+    'color_description',
+    'size_std',
+    'is_active',
+  ];
 
   @Output() selectionChange = new EventEmitter<number[]>();
   @Output() editRow = new EventEmitter<OamProductVariant>();
@@ -63,5 +87,15 @@ export class ProductVariantTableComponent {
     value: string,
   ): void {
     this.inlineSave.emit({ id, field, value });
+  }
+
+  // Verifica si una columna debe mostrarse segun filtros activos.
+  showColumn(column: VariantTableColumnKey): boolean {
+    return this.visibleColumns.includes(column);
+  }
+
+  // Entrega colspan dinamico para el estado de tabla vacia.
+  get emptyStateColspan(): number {
+    return this.visibleColumns.length + 1;
   }
 }

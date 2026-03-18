@@ -24,6 +24,11 @@ type FilterGroup = {
   items: FilterItem[];
 };
 
+type PersistedFiltersState = {
+  activeFilters: string[];
+  filterValues: Record<string, any>;
+};
+
 @Component({
   selector: 'app-filter-product-page',
   standalone: true,
@@ -36,12 +41,16 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
   @Input() collections: OamCollection[] = [];
 
   @Output() filtersChanged = new EventEmitter<Record<string, any>>();
+  // Notifica al padre que filtros estan activos para sincronizar columnas visibles.
+  @Output() activeFiltersChanged = new EventEmitter<string[]>();
 
   filterValues: Record<string, any> = {};
   activeFilters = signal<string[]>([]);
   openDropdown = signal<string | null>(null);
 
   private initialized = false;
+  // Prefijo usado para separar el estado persistido de filtros por pantalla.
+  private readonly storagePrefix = 'oam_filters_products_';
 
   private masterFilterGroups: FilterGroup[] = [
     {
@@ -126,8 +135,23 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
   ];
 
   ngOnInit(): void {
-    this.activeFilters.set(this.getInitialActiveFilters(this.mode));
+    // Intenta restaurar filtros guardados para el modo actual.
+    const restored = this.hydrateStateFromStorage();
+
+    // Si no hay estado previo, aplica el filtro inicial por defecto.
+    if (!restored) {
+      this.activeFilters.set(this.getInitialActiveFilters(this.mode));
+    }
+
     this.initialized = true;
+
+    // Publica filtros activos iniciales (restaurados o por defecto).
+    this.emitActiveFilters();
+
+    // Reaplica filtros restaurados para refrescar listado despues de recargar página.
+    if (restored) {
+      this.filtersChanged.emit({ ...this.filterValues });
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -140,7 +164,17 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
       const currentMode = changes['mode'].currentValue as FilterMode;
 
       if (previousMode !== currentMode) {
-        this.resetState(false);
+        // Cambia de modo cargando su propio estado persistido (master/variant).
+        const restored = this.hydrateStateFromStorage();
+
+        if (!restored) {
+          this.resetState(false);
+        }
+
+        // Reemite los filtros del nuevo modo para mantener la lista sincronizada.
+        this.filtersChanged.emit({ ...this.filterValues });
+        // Publica filtros activos del modo actual para recalcular columnas visibles.
+        this.emitActiveFilters();
         this.openDropdown.set(null);
       }
     }
@@ -172,6 +206,11 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
 
       return [...current, fieldId];
     });
+
+    // Persiste cambios de filtros activos para conservarlos al refrescar.
+    this.persistStateToStorage();
+    // Publica el nuevo estado de filtros activos tras marcar/desmarcar.
+    this.emitActiveFilters();
   }
 
   isFilterActive(fieldId: string): boolean {
@@ -188,6 +227,7 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
 
     if (value === '') {
       delete this.filterValues[fieldId];
+      this.persistStateToStorage();
       return;
     }
 
@@ -200,9 +240,13 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
     }
 
     this.filterValues[fieldId] = value;
+    // Persiste el valor del filtro al cambiar para mantener el contexto del usuario.
+    this.persistStateToStorage();
   }
 
   applyFilters(): void {
+    // Asegura persistencia antes de enviar filtros al componente padre.
+    this.persistStateToStorage();
     this.filtersChanged.emit({ ...this.filterValues });
   }
 
@@ -214,10 +258,88 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
   private resetState(emit = false): void {
     this.filterValues = {};
     this.activeFilters.set(this.getInitialActiveFilters(this.mode));
+    this.persistStateToStorage();
 
     if (emit) {
       this.filtersChanged.emit({});
     }
+
+    // Publica filtros activos tras limpiar o reiniciar estado.
+    this.emitActiveFilters();
+  }
+
+  // Emite una copia de filtros activos para evitar mutaciones externas.
+  private emitActiveFilters(): void {
+    this.activeFiltersChanged.emit([...this.activeFilters()]);
+  }
+
+  // Construye la llave de localStorage separada por modo (master/variant).
+  private getStorageKey(): string {
+    return `${this.storagePrefix}${this.mode}`;
+  }
+
+  // Obtiene los ids válidos de filtros para sanear datos recuperados de localStorage.
+  private getAvailableFilterIds(): string[] {
+    return this.filterGroups.flatMap((group) => group.items.map((item) => item.id));
+  }
+
+  // Carga y aplica filtros persistidos si existen y son válidos.
+  private hydrateStateFromStorage(): boolean {
+    try {
+      const raw = localStorage.getItem(this.getStorageKey());
+
+      if (!raw) {
+        return false;
+      }
+
+      const parsed = JSON.parse(raw) as PersistedFiltersState;
+
+      const availableIds = new Set(this.getAvailableFilterIds());
+
+      const persistedValues =
+        parsed && typeof parsed.filterValues === 'object' && parsed.filterValues !== null
+          ? parsed.filterValues
+          : {};
+
+      const sanitizedValues = Object.entries(persistedValues).reduce<Record<string, any>>(
+        (acc, [key, value]) => {
+          if (availableIds.has(key) && value !== '' && value !== null && value !== undefined) {
+            acc[key] = value;
+          }
+
+          return acc;
+        },
+        {},
+      );
+
+      const persistedActive = Array.isArray(parsed?.activeFilters) ? parsed.activeFilters : [];
+
+      const sanitizedActive = persistedActive.filter((id) => availableIds.has(id));
+
+      // Incluye en activos todo filtro que tenga valor guardado para mostrar su campo.
+      const activeWithValues = Array.from(new Set([...sanitizedActive, ...Object.keys(sanitizedValues)]));
+
+      this.filterValues = sanitizedValues;
+      this.activeFilters.set(
+        activeWithValues.length ? activeWithValues : this.getInitialActiveFilters(this.mode),
+      );
+
+      return Object.keys(sanitizedValues).length > 0 || activeWithValues.length > 0;
+    } catch {
+      // Si el JSON guardado está corrupto, se borra para evitar errores futuros.
+      localStorage.removeItem(this.getStorageKey());
+      return false;
+    }
+  }
+
+  // Guarda en localStorage filtros activos y valores para restaurarlos tras refresh.
+  private persistStateToStorage(): void {
+    const payload: PersistedFiltersState = {
+      activeFilters: this.activeFilters(),
+      filterValues: { ...this.filterValues },
+    };
+
+    localStorage.setItem(this.getStorageKey(), JSON.stringify(payload));
   }
 
   getSelectOptions(fieldId: string): Array<{ value: string | number; label: string }> {

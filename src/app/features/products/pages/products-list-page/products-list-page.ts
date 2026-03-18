@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, EMPTY } from 'rxjs';
 import { switchMap, tap, catchError, takeUntil, debounceTime } from 'rxjs/operators';
 
@@ -38,6 +39,24 @@ type ProductVariantsRequest = {
 
 type ProductRequest = ProductListRequest | ProductVariantsRequest;
 type CatalogMode = 'create' | 'edit' | 'show';
+type ProductMasterTableColumnKey =
+  | 'id'
+  | 'oam_key'
+  | 'template_name'
+  | 'status'
+  | 'upc'
+  | 'product_family'
+  | 'gender'
+  | 'brand'
+  | 'collection'
+  | 'made_in'
+  | 'description_short'
+  | 'created_by'
+  | 'approved_by'
+  | 'approved_at'
+  | 'primary_image'
+  | 'gallery_count'
+  | 'variants_count';
 
 @Component({
   selector: 'app-products-list-page',
@@ -56,6 +75,7 @@ type CatalogMode = 'create' | 'edit' | 'show';
 })
 export class ProductsListPage implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
+  private router = inject(Router);
   private productService = inject(ProductService);
   private productVariantService = inject(OamProductVariantService);
   private brandService = inject(OamBrandService);
@@ -63,6 +83,35 @@ export class ProductsListPage implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private productRequest$ = new Subject<ProductRequest>();
+
+  // Define columnas base siempre visibles en tabla de Product Master.
+  private readonly defaultMasterColumns: ProductMasterTableColumnKey[] = [
+    'id',
+    'oam_key',
+    'template_name',
+    'status',
+  ];
+
+  // Mapea filtros activos a columnas adicionales visibles en la tabla.
+  private readonly masterFilterColumnMap: Record<string, ProductMasterTableColumnKey[]> = {
+    upc: ['upc'],
+    oam_key: ['oam_key'],
+    template_name: ['template_name'],
+    brand_id: ['brand'],
+    collection_id: ['collection'],
+    product_family: ['product_family'],
+    gender: ['gender'],
+    status: ['status'],
+    made_in: ['made_in'],
+    description_short: ['description_short'],
+    created_by: ['created_by'],
+    approved_by: ['approved_by'],
+    approved_at_from: ['approved_at'],
+    approved_at_to: ['approved_at'],
+    has_primary_image: ['primary_image'],
+    has_gallery: ['gallery_count'],
+    has_variants: ['variants_count'],
+  };
 
   public products = signal<OamProductMaster[]>([]);
   public productVariants = signal<OamProductVariant[]>([]);
@@ -89,6 +138,10 @@ export class ProductsListPage implements OnInit, OnDestroy {
   public sequentialEditIds: number[] = [];
   public sequentialEditIndex = signal<number>(0);
   public sequentialEditActive = signal<boolean>(false);
+  // Guarda columnas visibles de la tabla segun filtros activos.
+  public visibleMasterColumns = signal<ProductMasterTableColumnKey[]>(
+    this.defaultMasterColumns,
+  );
 
   public productForm: FormGroup = this.fb.group({
     oam_key: ['', [Validators.required]],
@@ -96,7 +149,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
     template_name: ['', [Validators.required]],
     status: ['active', [Validators.required]],
     gender: ['unisex', [Validators.required]],
-    upc: [''],
     brand_id: [null],
     collection_id: [null],
     description_short: [''],
@@ -104,8 +156,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
     attributes: this.fb.array([]),
     lens_features: this.fb.array([]),
     tags: this.fb.array([]),
-    primary_image_url: [''],
-    gallery_urls: this.fb.array([]),
   });
 
   public variantForm: FormGroup = this.fb.group({
@@ -118,6 +168,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
     size_temple: [''],
     size_std: [''],
     primary_image_url: [''],
+    gallery_urls: [[]],
     is_active: [true],
   });
 
@@ -182,11 +233,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
             label: 'Template Name',
             type: 'text',
             required: true,
-          },
-          {
-            key: 'upc',
-            label: 'UPC / EAN',
-            type: 'text',
           },
           {
             key: 'brand_id',
@@ -285,11 +331,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
             required: true,
           },
           {
-            key: 'upc',
-            label: 'UPC / EAN',
-            type: 'text',
-          },
-          {
             key: 'brand_id',
             label: 'Marca',
             type: 'select',
@@ -302,17 +343,17 @@ export class ProductsListPage implements OnInit, OnDestroy {
             options: [],
           },
           {
+            key: 'made_in',
+            label: 'Made In',
+            type: 'select',
+            options: COUNTRIES.map((c) => ({ label: c, value: c })),
+          },
+          {
             key: 'description_short',
             label: 'Descripción Corta',
             type: 'textarea',
             colSpan: 2,
             rows: 3,
-          },
-          {
-            key: 'made_in',
-            label: 'Made In',
-            type: 'text',
-            colSpan: 2,
           },
         ],
       },
@@ -422,37 +463,49 @@ export class ProductsListPage implements OnInit, OnDestroy {
   private buildProductConfig(
     baseConfig: CrudConfig<OamProductMaster>,
   ): CrudConfig<OamProductMaster> {
+    const isBulkEdit = this.sequentialEditActive();
+
     return {
       ...baseConfig,
       sections: baseConfig.sections?.map((section) => ({
         ...section,
-        fields: section.fields.map((field) => {
-          if (field.key === 'brand_id') {
-            return {
-              ...field,
-              options: this.brands().map((brand) => ({
-                label: brand.name,
-                value: brand.id,
-              })),
-            };
-          }
+        fields: section.fields
+          .filter((field) => {
+            if (!isBulkEdit) {
+              return true;
+            }
 
-          if (field.key === 'collection_id') {
-            const selectedBrandId = this.productForm.get('brand_id')?.value;
-
-            return {
-              ...field,
-              options: this.collections()
-                .filter((collection) => !selectedBrandId || collection.brand_id === selectedBrandId)
-                .map((collection) => ({
-                  label: collection.name,
-                  value: collection.id,
+            return !['oam_key', 'product_family', 'template_name'].includes(String(field.key));
+          })
+          .map((field) => {
+            if (field.key === 'brand_id') {
+              return {
+                ...field,
+                options: this.brands().map((brand) => ({
+                  label: brand.name,
+                  value: brand.id,
                 })),
-            };
-          }
+              };
+            }
 
-          return field;
-        }),
+            if (field.key === 'collection_id') {
+              const selectedBrandId = this.productForm.get('brand_id')?.value;
+
+              return {
+                ...field,
+                options: this.collections()
+                  .filter(
+                    (collection) => !selectedBrandId || collection.brand_id === selectedBrandId,
+                  )
+                  .map((collection) => ({
+                    label: collection.name,
+                    value: collection.id,
+                  })),
+              };
+            }
+
+            return field;
+          }),
       })),
     };
   }
@@ -498,6 +551,16 @@ export class ProductsListPage implements OnInit, OnDestroy {
     this.loadProducts();
   }
 
+  // Sincroniza columnas visibles de la tabla con filtros activos seleccionados.
+  onActiveMasterFiltersChange(activeFilters: string[]): void {
+    const mappedColumns = activeFilters.flatMap(
+      (filterId) => this.masterFilterColumnMap[filterId] ?? [],
+    );
+
+    const nextColumns = Array.from(new Set([...this.defaultMasterColumns, ...mappedColumns]));
+    this.visibleMasterColumns.set(nextColumns);
+  }
+
   openCreateForm(): void {
     this.selectedVariantId.set(null);
     this.isEditMode.set(false);
@@ -510,7 +573,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
       template_name: '',
       status: 'active',
       gender: 'unisex',
-      upc: '',
       brand_id: null,
       collection_id: null,
       description_short: '',
@@ -518,8 +580,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
       attributes: {},
       lens_features: {},
       tags: [],
-      primary_image_url: '',
-      gallery_urls: [],
     });
 
     this.variantForm.reset({
@@ -532,6 +592,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
       size_temple: '',
       size_std: '',
       primary_image_url: '',
+      gallery_urls: [],
       is_active: true,
     });
 
@@ -552,7 +613,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
       template_name: product.template_name,
       status: product.status,
       gender: product.gender,
-      upc: product.upc || '',
       brand_id: product.brand_id || null,
       collection_id: product.collection_id || null,
       description_short: product.description_short || '',
@@ -560,8 +620,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
       attributes: product.attributes || {},
       lens_features: product.lens_features || {},
       tags: product.tags || [],
-      primary_image_url: product.primary_image_url || '',
-      gallery_urls: product.gallery_urls || [],
     });
 
     this.variantForm.reset({
@@ -574,6 +632,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
       size_temple: '',
       size_std: '',
       primary_image_url: '',
+      gallery_urls: [],
       is_active: true,
     });
 
@@ -597,6 +656,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
       size_temple: variant.size_temple || '',
       size_std: variant.size_std || '',
       primary_image_url: variant.primary_image_url || '',
+      gallery_urls: variant.gallery_urls || [],
       is_active: variant.is_active ?? true,
     });
   }
@@ -614,7 +674,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
       template_name: '',
       status: 'active',
       gender: 'unisex',
-      upc: '',
       brand_id: null,
       collection_id: null,
       description_short: '',
@@ -622,8 +681,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
       attributes: {},
       lens_features: {},
       tags: [],
-      primary_image_url: '',
-      gallery_urls: [],
     });
 
     this.variantForm.reset({
@@ -636,6 +693,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
       size_temple: '',
       size_std: '',
       primary_image_url: '',
+      gallery_urls: [],
       is_active: true,
     });
 
@@ -691,7 +749,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
   }
 
   canManageVariants(): boolean {
-    return !!this.selectedProductId();
+    return !!this.selectedProductId() && !this.sequentialEditActive();
   }
 
   resetVariantForm(): void {
@@ -707,6 +765,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
       size_temple: '',
       size_std: '',
       primary_image_url: '',
+      gallery_urls: [],
       is_active: true,
     });
   }
@@ -1133,7 +1192,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
       template_name: event.field === 'template_name' ? event.value : (current.template_name ?? ''),
       status: event.field === 'status' ? event.value : (current.status ?? 'active'),
       gender: current.gender ?? 'unisex',
-      upc: current.upc ?? '',
       brand_id: current.brand_id ?? undefined,
       collection_id: current.collection_id ?? undefined,
       description_short: current.description_short ?? '',
@@ -1141,8 +1199,6 @@ export class ProductsListPage implements OnInit, OnDestroy {
       attributes: current.attributes ?? [],
       lens_features: current.lens_features ?? [],
       tags: current.tags ?? [],
-      primary_image_url: current.primary_image_url ?? '',
-      gallery_urls: current.gallery_urls ?? [],
     };
 
     this.productService.updateProduct(event.id, payload).subscribe({
@@ -1172,5 +1228,21 @@ export class ProductsListPage implements OnInit, OnDestroy {
   private resetCollectionEditor(): void {
     this.selectedCollection.set(null);
     this.collectionMode.set('create');
+  }
+
+  // Abre la vista /variants filtrada por el product master actual y dispara edicion masiva.
+  openFullEditVariants(): void {
+    const productMasterId = this.selectedProductId();
+
+    if (!productMasterId || this.productVariants().length <= 1) {
+      return;
+    }
+
+    void this.router.navigate(['/variants'], {
+      queryParams: {
+        product_master_id: productMasterId,
+        auto_full_edit: 1,
+      },
+    });
   }
 }

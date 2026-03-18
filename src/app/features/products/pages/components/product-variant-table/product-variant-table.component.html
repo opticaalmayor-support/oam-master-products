@@ -9,12 +9,42 @@
             (change)="toggleAll($any($event.target).checked)"
           />
         </th>
-        <th class="px-4 py-3 text-left">ID</th>
-        <th class="px-4 py-3 text-left">SKU</th>
-        <th class="px-4 py-3 text-left">Barcode</th>
-        <th class="px-4 py-3 text-left">Color</th>
-        <th class="px-4 py-3 text-left">Size</th>
-        <th class="px-4 py-3 text-left">Active</th>
+        @if (showColumn('id')) {
+          <th class="px-4 py-3 text-left">ID</th>
+        }
+        @if (showColumn('thumbnail')) {
+          <th class="px-4 py-3 text-left">Image</th>
+        }
+        @if (showColumn('internal_sku')) {
+          <th class="px-4 py-3 text-left">SKU</th>
+        }
+        @if (showColumn('barcode')) {
+          <th class="px-4 py-3 text-left">Barcode</th>
+        }
+        @if (showColumn('color_code')) {
+          <th class="px-4 py-3 text-left">Color Code</th>
+        }
+        @if (showColumn('color_description')) {
+          <th class="px-4 py-3 text-left">Color</th>
+        }
+        @if (showColumn('size_lens')) {
+          <th class="px-4 py-3 text-left">Lens</th>
+        }
+        @if (showColumn('size_bridge')) {
+          <th class="px-4 py-3 text-left">Bridge</th>
+        }
+        @if (showColumn('size_temple')) {
+          <th class="px-4 py-3 text-left">Temple</th>
+        }
+        @if (showColumn('size_std')) {
+          <th class="px-4 py-3 text-left">Size</th>
+        }
+        @if (showColumn('product_master_id')) {
+          <th class="px-4 py-3 text-left">Master ID</th>
+        }
+        @if (showColumn('is_active')) {
+          <th class="px-4 py-3 text-left">Active</th>
+        }
       </tr>
     </thead>
 
@@ -29,60 +59,104 @@
             />
           </td>
 
-          <td class="px-4 py-3">{{ item.id }}</td>
+          @if (showColumn('id')) {
+            <td class="px-4 py-3">{{ item.id }}</td>
+          }
 
-          <td class="px-4 py-3">
-            <app-editable-cell
-              [value]="item.is_active ? '1' : '0'"
-              type="select"
-              [disabled]="inlineEditDisabled"
-              [options]="activeOptions"
-              (save)="emitInlineSave(item.id, 'is_active', $event)"
-            />
-          </td>
+          @if (showColumn('thumbnail')) {
+            <td class="px-4 py-3">
+              @if (item.primary_image_url) {
+                <img
+                  [src]="item.primary_image_url"
+                  alt="variant thumbnail"
+                  class="h-10 w-10 rounded border object-cover"
+                />
+              } @else {
+                <div
+                  class="h-10 w-10 rounded border border-dashed text-xs text-gray-400 flex items-center justify-center"
+                >
+                  —
+                </div>
+              }
+            </td>
+          }
 
-          <td class="px-4 py-3">
-            <app-editable-cell
-              [value]="item.barcode ?? ''"
-              [disabled]="inlineEditDisabled"
-              placeholder="Barcode"
-              (save)="emitInlineSave(item.id, 'barcode', $event)"
-            />
-          </td>
+          @if (showColumn('internal_sku')) {
+            <td class="px-4 py-3">
+              {{ item.internal_sku || '—' }}
+            </td>
+          }
 
-          <td class="px-4 py-3">
-            <app-editable-cell
-              [value]="item.color_description ?? ''"
-              [disabled]="inlineEditDisabled"
-              placeholder="Color description"
-              (save)="emitInlineSave(item.id, 'color_description', $event)"
-            />
-          </td>
+          @if (showColumn('barcode')) {
+            <td class="px-4 py-3">
+              <app-editable-cell
+                [value]="item.barcode ?? ''"
+                [disabled]="inlineEditDisabled || blockBarcodeInlineEdit"
+                placeholder="Barcode"
+                (save)="emitInlineSave(item.id, 'barcode', $event)"
+              />
+            </td>
+          }
 
-          <td class="px-4 py-3">
-            <app-editable-cell
-              [value]="item.size_std ?? ''"
-              [disabled]="inlineEditDisabled"
-              placeholder="Size"
-              (save)="emitInlineSave(item.id, 'size_std', $event)"
-            />
-          </td>
+          @if (showColumn('color_code')) {
+            <td class="px-4 py-3">{{ item.color_code || '—' }}</td>
+          }
 
-          <td class="px-4 py-3">
-            <app-editable-cell
-              [value]="item.is_active ? '1' : '0'"
-              type="select"
-              [disabled]="inlineEditDisabled"
-              [options]="activeOptions"
-              (save)="emitInlineSave(item.id, 'is_active', $event)"
-            />
-          </td>
+          @if (showColumn('color_description')) {
+            <td class="px-4 py-3">
+              <app-editable-cell
+                [value]="item.color_description ?? ''"
+                [disabled]="inlineEditDisabled"
+                placeholder="Color description"
+                (save)="emitInlineSave(item.id, 'color_description', $event)"
+              />
+            </td>
+          }
+
+          @if (showColumn('size_lens')) {
+            <td class="px-4 py-3">{{ item.size_lens || '—' }}</td>
+          }
+
+          @if (showColumn('size_bridge')) {
+            <td class="px-4 py-3">{{ item.size_bridge || '—' }}</td>
+          }
+
+          @if (showColumn('size_temple')) {
+            <td class="px-4 py-3">{{ item.size_temple || '—' }}</td>
+          }
+
+          @if (showColumn('size_std')) {
+            <td class="px-4 py-3">
+              <app-editable-cell
+                [value]="item.size_std ?? ''"
+                [disabled]="inlineEditDisabled"
+                placeholder="Size"
+                (save)="emitInlineSave(item.id, 'size_std', $event)"
+              />
+            </td>
+          }
+
+          @if (showColumn('product_master_id')) {
+            <td class="px-4 py-3">{{ item.product_master_id }}</td>
+          }
+
+          @if (showColumn('is_active')) {
+            <td class="px-4 py-3">
+              <app-editable-cell
+                [value]="item.is_active ? '1' : '0'"
+                type="select"
+                [disabled]="inlineEditDisabled"
+                [options]="activeOptions"
+                (save)="emitInlineSave(item.id, 'is_active', $event)"
+              />
+            </td>
+          }
         </tr>
       }
 
       @if (items.length === 0) {
         <tr>
-          <td colspan="8" class="px-4 py-6 text-center text-gray-500">
+          <td [attr.colspan]="emptyStateColspan" class="px-4 py-6 text-center text-gray-500">
             No hay variantes disponibles.
           </td>
         </tr>

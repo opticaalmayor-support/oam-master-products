@@ -2,6 +2,10 @@ export const API_CONFIG = {
   //baseUrl: 'http://127.0.0.1:8000',
   baseUrl: 'http://new-api.test',
   endpoints: {
+    maestroAuthLogin: '/api/maestro/auth/login',
+    maestroAuthMe: '/api/maestro/auth/me',
+    maestroAuthLogout: '/api/maestro/auth/logout',
+    maestroAdminUsers: '/api/maestro/admin/users',
     suppliers: '/api/maestro/suppliers',
     products: '/api/maestro/products',
     categories: '/api/maestro/categories',
@@ -13,6 +17,7 @@ export const API_CONFIG = {
     CollectionByBrand: '/api/maestro/collections/brand/{brandId}',
     catalogRuns: '/api/maestro/runs/catalog',
     catalogRunUpload: '/api/maestro/runs/catalog/upload',
+    OamProductVariantUploadMedia: '/api/maestro/product-variants/upload-media',
   },
 };
 

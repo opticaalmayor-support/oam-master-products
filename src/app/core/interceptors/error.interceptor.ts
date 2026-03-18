@@ -1,8 +1,12 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
+  // Inyecta AuthService para limpiar sesion local ante 401.
+  const authService = inject(AuthService);
+
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       let errorMessage = 'Ha ocurrido un error desconocido';
@@ -19,7 +23,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
               break;
             case 401:
               errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente';
-              localStorage.removeItem('auth_token');
+              authService.clearAuthData();
               break;
             case 403:
               errorMessage = 'No tienes permisos para realizar esta acción';
@@ -44,15 +48,15 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         status: error.status,
         message: errorMessage,
         url: error.url,
-        error: error.error
+        error: error.error,
       });
       
       return throwError(() => ({
         status: error.status,
         message: errorMessage,
         errors: error.error?.errors || null,
-        originalError: error
+        originalError: error,
       }));
-    })
+    }),
   );
 };

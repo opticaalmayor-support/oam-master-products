@@ -19,7 +19,9 @@ export type CrudFieldType =
   | 'hidden'
   | 'multiselect'
   | 'json'
-  | 'tags';
+  | 'tags'
+  | 'image'
+  | 'gallery';
 
 export interface CrudOption<T = any> {
   label: string;

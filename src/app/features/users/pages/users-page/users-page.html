@@ -1,0 +1,162 @@
+<div class="p-4 sm:p-6 lg:p-8">
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Usuarios</h1>
+      <p class="text-sm text-gray-600">Registra, edita y administra usuarios de Maestro.</p>
+    </div>
+
+    <button
+      type="button"
+      (click)="openCreateModal()"
+      class="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-800"
+    >
+      Nuevo usuario
+    </button>
+  </div>
+
+  <div class="rounded-lg border bg-white">
+    <div class="border-b p-4">
+      <input
+        type="search"
+        [value]="searchTerm()"
+        (input)="searchTerm.set($any($event.target).value)"
+        class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900"
+        placeholder="Buscar por nombre, correo o id"
+      />
+    </div>
+
+    @if (errorMessage()) {
+      <div class="border-b bg-red-50 px-4 py-3 text-sm text-red-700">{{ errorMessage() }}</div>
+    }
+
+    @if (isLoading()) {
+      <div class="p-6 text-center text-sm text-gray-500">Cargando usuarios...</div>
+    } @else if (filteredUsers().length === 0) {
+      <div class="p-6 text-center text-sm text-gray-500">No hay usuarios disponibles.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+            <tr>
+              <th class="px-4 py-3">ID</th>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Correo</th>
+              <th class="px-4 py-3">Estado</th>
+              <th class="px-4 py-3">Último acceso</th>
+              <th class="px-4 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of filteredUsers(); track user.id) {
+              <tr class="border-t">
+                <td class="px-4 py-3">{{ user.id }}</td>
+                <td class="px-4 py-3">{{ user.name }}</td>
+                <td class="px-4 py-3">{{ user.email }}</td>
+                <td class="px-4 py-3">
+                  @if (user.is_active) {
+                    <span class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      Activo
+                    </span>
+                  } @else {
+                    <span class="rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700">
+                      Inactivo
+                    </span>
+                  }
+                </td>
+                <td class="px-4 py-3">{{ user.last_login_at || '—' }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      (click)="openEditModal(user)"
+                      class="rounded border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      (click)="openDeleteModal(user)"
+                      class="rounded border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+@if (showModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-xl rounded-lg bg-white shadow-xl">
+      <div class="flex items-center justify-between border-b px-5 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">
+          {{ isEditMode() ? 'Editar usuario' : 'Registrar usuario' }}
+        </h2>
+        <button type="button" (click)="closeModal()" class="text-gray-500 hover:text-gray-700">✕</button>
+      </div>
+
+      <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="space-y-4 p-5">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Nombre</label>
+          <input formControlName="name" type="text" class="mt-1 w-full rounded-md border border-gray-300 p-2.5 text-sm" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Correo</label>
+          <input formControlName="email" type="email" class="mt-1 w-full rounded-md border border-gray-300 p-2.5 text-sm" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">
+            {{ isEditMode() ? 'Nueva contraseña (opcional)' : 'Contraseña' }}
+          </label>
+          <input
+            formControlName="password"
+            type="password"
+            class="mt-1 w-full rounded-md border border-gray-300 p-2.5 text-sm"
+          />
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input formControlName="is_active" type="checkbox" />
+          Usuario activo
+        </label>
+
+        <div class="flex justify-end gap-3 border-t pt-4">
+          <button type="button" (click)="closeModal()" class="rounded-md border px-4 py-2 text-sm text-gray-700">
+            Cancelar
+          </button>
+          <button type="submit" class="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800">
+            {{ isEditMode() ? 'Actualizar' : 'Crear' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showDeleteModal() && userToDelete()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
+      <h3 class="text-lg font-semibold text-gray-900">Confirmar eliminación</h3>
+      <p class="mt-2 text-sm text-gray-600">
+        ¿Seguro que deseas eliminar al usuario <strong>{{ userToDelete()!.name }}</strong>?
+      </p>
+
+      <div class="mt-5 flex justify-end gap-3">
+        <button type="button" (click)="closeDeleteModal()" class="rounded-md border px-4 py-2 text-sm text-gray-700">
+          Cancelar
+        </button>
+        <button type="button" (click)="confirmDelete()" class="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+}
