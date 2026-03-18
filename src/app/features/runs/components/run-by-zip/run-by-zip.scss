@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.drop-zone {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.drop-zone.drag-over {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.dark .drop-zone.drag-over {
+  background-color: #1e3a5f;
+}

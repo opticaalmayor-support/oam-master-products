@@ -18,13 +18,19 @@ export const routes: Routes = [
     path: 'runs',
     title: 'Runs | OAM Master',
     loadComponent: () =>
-      import('./features/runs/pages/runs-list-page/runs-list-page').then((m) => m.RunsListPage),
+      import('./features/maestro/runs/pages/runs-list.page').then((m) => m.RunsListPage),
+  },
+  {
+    path: 'runs/upload',
+    title: 'Upload Catalog | OAM Master',
+    loadComponent: () =>
+      import('./features/runs/components/run-by-zip/run-by-zip').then((m) => m.RunByZip),
   },
   {
     path: 'runs/:runId',
     title: 'Run Detail | OAM Master',
     loadComponent: () =>
-      import('./features/runs/pages/run-detail-page/run-detail-page').then((m) => m.RunDetailPage),
+      import('./features/maestro/runs/pages/run-detail.page').then((m) => m.RunDetailPage),
   },
   {
     path: 'runs/:runId/compare',

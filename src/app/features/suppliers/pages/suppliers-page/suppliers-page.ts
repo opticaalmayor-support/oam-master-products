@@ -50,9 +50,9 @@ export class SuppliersPage implements OnInit {
 
   loadSuppliers() {
     this.isLoading.set(true);
-    this.http.get<OamSupplier[]>(this.apiUrl).subscribe({
-      next: (data) => {
-        this.suppliers.set(data);
+    this.http.get<{ data: OamSupplier[] }>(this.apiUrl).subscribe({
+      next: (res) => {
+        this.suppliers.set(res.data);
         this.isLoading.set(false);
       },
       error: (error) => {

@@ -1,0 +1,292 @@
+<div class="p-4 sm:p-6 lg:p-8">
+
+  <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-1">Nuevo Run de Catalogo</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Sube el catalogo del proveedor en formato ZIP (unico) o multiples archivos Excel (.xlsx, .xls).</p>
+    </div>
+    <a routerLink="/runs" class="inline-flex items-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+      Ver listado de runs
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Upload Panel -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col gap-5">
+
+      <!-- Supplier Selector -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Proveedor
+        </label>
+        <select
+          [ngModel]="selectedSupplierId()"
+          (ngModelChange)="selectedSupplierId.set($event ? +$event : null)"
+          class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500">
+          <option [ngValue]="null">-- Selecciona un proveedor --</option>
+          @for (supplier of suppliers(); track supplier.id) {
+            <option [ngValue]="supplier.id">{{ supplier.name }} ({{ supplier.code }})</option>
+          }
+        </select>
+      </div>
+
+      <!-- Drop Zone -->
+      <div
+        class="drop-zone border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
+        [class.border-blue-400]="isDragOver()"
+        [class.bg-blue-50]="isDragOver()"
+        [class.border-gray-300]="!isDragOver()"
+        [class.dark:border-gray-600]="!isDragOver()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        (click)="triggerFileInput()">
+
+        <input
+          #fileInput
+          type="file"
+          accept=".zip,.xlsx,.xls"
+          multiple
+          class="hidden"
+          (change)="onFileSelected($event)">
+
+        @if (!selectedFile() && selectedFiles().length === 0) {
+          <div class="flex flex-col items-center gap-3">
+            <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <div>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Arrastra tus archivos aqui
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">o haz clic para seleccionar</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">.zip</span>
+              <span class="text-xs text-gray-400 dark:text-gray-500">o</span>
+              <span class="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">.xlsx / .xls (multiple)</span>
+            </div>
+          </div>
+        }
+
+        <!-- ZIP seleccionado -->
+        @if (selectedFile()) {
+          <div class="flex flex-col items-center gap-3" (click)="$event.stopPropagation()">
+            <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+              <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ selectedFile()!.name }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ formatFileSize(selectedFile()!.size) }}</p>
+            </div>
+            <button
+              type="button"
+              (click)="clearFile()"
+              class="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline">
+              Quitar archivo
+            </button>
+          </div>
+        }
+
+        <!-- Excel multiple seleccionados -->
+        @if (selectedFiles().length > 0) {
+          <div class="flex flex-col gap-2 w-full" (click)="$event.stopPropagation()">
+            @for (file of selectedFiles(); track file.name; let i = $index) {
+              <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <svg class="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  <span class="text-xs font-medium text-gray-800 dark:text-white truncate">{{ file.name }}</span>
+                  <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">{{ formatFileSize(file.size) }}</span>
+                </div>
+                <button
+                  type="button"
+                  (click)="removeExcelFile(i)"
+                  class="ml-2 text-red-400 hover:text-red-600 dark:hover:text-red-300 shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            }
+            <button
+              type="button"
+              (click)="clearFile()"
+              class="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline mt-1 text-center">
+              Quitar todos
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Error / Success -->
+      @if (uploadError()) {
+        <div class="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          {{ uploadError() }}
+        </div>
+      }
+
+      @if (uploadSuccess()) {
+        <div class="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-700 dark:text-green-400">
+          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          Archivo(s) subido(s) correctamente. El run fue creado como pendiente.
+        </div>
+      }
+
+      <!-- Upload Button -->
+      <button
+        type="button"
+        [disabled]="!canUpload()"
+        (click)="upload()"
+        class="w-full flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
+        [class.bg-blue-700]="canUpload()"
+        [class.hover:bg-blue-800]="canUpload()"
+        [class.dark:bg-blue-600]="canUpload()"
+        [class.dark:hover:bg-blue-700]="canUpload()"
+        [class.bg-gray-400]="!canUpload()"
+        [class.dark:bg-gray-600]="!canUpload()"
+        [class.cursor-not-allowed]="!canUpload()">
+
+        @if (isUploading()) {
+          <svg aria-hidden="true" class="w-4 h-4 animate-spin fill-white text-blue-300" viewBox="0 0 100 101" fill="none">
+            <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+            <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+          </svg>
+          Subiendo...
+        } @else {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          Subir y crear Run
+        }
+      </button>
+
+    </div>
+
+    <!-- Runs Panel -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow flex flex-col">
+
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Runs recientes</h3>
+        <div class="flex items-center gap-3">
+          @if (isAutoRefreshing()) {
+            <span class="inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-full px-2.5 py-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Auto actualizando
+            </span>
+          }
+          <button
+            type="button"
+            (click)="loadRecentRuns()"
+            class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Actualizar
+          </button>
+        </div>
+      </div>
+
+      @if (isLoadingRuns() && recentRuns().length === 0) {
+        <div class="p-4 space-y-3 animate-pulse">
+          @for (skeleton of [1,2,3,4]; track skeleton) {
+            <div class="grid grid-cols-5 gap-3">
+              <div class="h-4 rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div class="h-4 rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div class="h-4 rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div class="h-4 rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div class="h-4 rounded bg-gray-200 dark:bg-gray-700"></div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (!isLoadingRuns() && recentRuns().length === 0) {
+        <div class="flex flex-col items-center justify-center p-10 text-center">
+          <svg class="w-10 h-10 text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <p class="text-sm text-gray-500 dark:text-gray-400">No hay runs registrados aun.</p>
+        </div>
+      }
+
+      @if (recentRuns().length > 0) {
+        <div class="overflow-x-auto">
+          @if (isAutoRefreshing()) {
+            <div class="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700/60">
+              Escuchando estado del proceso y refrescando automaticamente.
+            </div>
+          }
+          <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+              <tr>
+                <th class="px-4 py-3">Proveedor</th>
+                <th class="px-4 py-3">Fecha</th>
+                <th class="px-4 py-3">Estado</th>
+                <th class="px-4 py-3">Productos</th>
+                <th class="px-4 py-3">Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (run of recentRuns(); track run.id) {
+                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                    {{ run.oam_supplier?.name ?? ('ID ' + run.supplier_id) }}
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    {{ run.run_date | date:'dd/MM/yyyy' }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span [class]="'text-xs font-medium px-2 py-0.5 rounded ' + getStatusClass(run.status)">
+                      {{ getStatusLabel(run.status) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    @if (run.status === 'pending' || run.status === 'processing') {
+                      <div class="h-3.5 w-16 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+                    } @else {
+                      {{ run.total_products ?? '—' }}
+                    }
+                  </td>
+                  <td class="px-4 py-3">
+                    @if (run.status === 'pending') {
+                      <button
+                        type="button"
+                        (click)="startRun(run)"
+                        class="text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Iniciar
+                      </button>
+                    } @else if (run.status === 'processing') {
+                      <span class="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-300">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        Procesando...
+                      </span>
+                    } @else {
+                      <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+    </div>
+
+  </div>
+
+</div>
