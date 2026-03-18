@@ -49,6 +49,7 @@ export class ProductMasterWorkspaceComponent {
   @Output() editVariant = new EventEmitter<any>();
   @Output() deleteVariant = new EventEmitter<number>();
   @Output() createVariant = new EventEmitter<void>();
+  @Output() fullEditVariants = new EventEmitter<void>();
 
   @Output() brandSubmitted = new EventEmitter<any>();
   @Output() collectionSubmitted = new EventEmitter<any>();

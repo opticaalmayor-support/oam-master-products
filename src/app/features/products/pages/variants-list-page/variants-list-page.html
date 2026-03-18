@@ -3,7 +3,11 @@
     <h1 class="text-2xl font-bold text-gray-800">Variantes de Producto</h1>
   </div>
 
-  <app-filter-product-page [mode]="'variant'" (filtersChanged)="onUpdateFilters($event)">
+  <app-filter-product-page
+    [mode]="'variant'"
+    (filtersChanged)="onUpdateFilters($event)"
+    (activeFiltersChanged)="onActiveVariantFiltersChange($event)"
+  >
   </app-filter-product-page>
 
   <app-selection-toolbar
@@ -18,7 +22,9 @@
   <app-product-variant-table
     [items]="variants()"
     [selectedIds]="selectedIds"
+    [visibleColumns]="visibleVariantColumns()"
     [inlineEditDisabled]="isPageBusy()"
+    [blockBarcodeInlineEdit]="hasRestrictedBulkSelection()"
     (selectionChange)="onSelectionChange($event)"
     (editRow)="editVariant($event)"
     (deleteRow)="deleteVariant($event)"

@@ -20,7 +20,8 @@
           [class.md:grid-cols-2]="(section.columns || 2) === 2"
         >
           @for (field of section.fields; track trackByKey($index, field)) {
-            <div [class.md:col-span-2]="field.colSpan === 2">
+            @if (!field.hidden) {
+              <div [class.md:col-span-2]="field.colSpan === 2">
               @if (field.type !== 'checkbox') {
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
                   {{ field.label }}
@@ -112,6 +113,67 @@
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                   />
                 }
+
+                @case ('image') {
+                  <div class="mt-2 space-y-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      (change)="onImageSelected($event, field.key.toString())"
+                      class="block w-full rounded-md border border-gray-300 p-2 text-sm"
+                    />
+
+                    @if (form.get(field.key.toString())?.value) {
+                      <div class="rounded-md border p-3 bg-gray-50">
+                        <img
+                          [src]="form.get(field.key.toString())?.value"
+                          alt="preview"
+                          class="max-h-48 rounded border object-contain"
+                        />
+                      </div>
+                    }
+                  </div>
+                }
+
+                @case ('gallery') {
+                  <div class="mt-2 space-y-3">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      (change)="onGallerySelected($event, field.key.toString())"
+                      class="block w-full rounded-md border border-gray-300 p-2 text-sm"
+                    />
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      @for (item of form.get(field.key.toString())?.value || []; track item) {
+                        <div class="relative rounded-md border bg-gray-50 p-2">
+                          @if (isVideo(item)) {
+                            <video
+                              [src]="item"
+                              controls
+                              class="h-28 w-full rounded object-cover"
+                            ></video>
+                          } @else {
+                            <img
+                              [src]="item"
+                              alt="gallery item"
+                              class="h-28 w-full rounded object-cover"
+                            />
+                          }
+
+                          <button
+                            type="button"
+                            (click)="removeGalleryItem(field.key.toString(), item)"
+                            class="absolute top-1 right-1 rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
               }
 
               @if (field.hint && field.type !== 'checkbox') {
@@ -119,7 +181,8 @@
                   {{ field.hint }}
                 </p>
               }
-            </div>
+              </div>
+            }
           }
         </div>
       </section>
@@ -131,7 +194,8 @@
       [class.md:grid-cols-2]="(config.columns || 2) === 2"
     >
       @for (field of fields; track trackByKey($index, field)) {
-        <div [class.md:col-span-2]="field.colSpan === 2">
+        @if (!field.hidden) {
+          <div [class.md:col-span-2]="field.colSpan === 2">
           @if (field.type !== 'checkbox') {
             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">
               {{ field.label }}
@@ -235,6 +299,67 @@
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
               />
             }
+
+            @case ('image') {
+              <div class="mt-2 space-y-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onImageSelected($event, field.key.toString())"
+                  class="block w-full rounded-md border border-gray-300 p-2 text-sm"
+                />
+
+                @if (form.get(field.key.toString())?.value) {
+                  <div class="rounded-md border p-3 bg-gray-50">
+                    <img
+                      [src]="form.get(field.key.toString())?.value"
+                      alt="preview"
+                      class="max-h-48 rounded border object-contain"
+                    />
+                  </div>
+                }
+              </div>
+            }
+
+            @case ('gallery') {
+              <div class="mt-2 space-y-3">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  (change)="onGallerySelected($event, field.key.toString())"
+                  class="block w-full rounded-md border border-gray-300 p-2 text-sm"
+                />
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  @for (item of form.get(field.key.toString())?.value || []; track item) {
+                    <div class="relative rounded-md border bg-gray-50 p-2">
+                      @if (isVideo(item)) {
+                        <video
+                          [src]="item"
+                          controls
+                          class="h-28 w-full rounded object-cover"
+                        ></video>
+                      } @else {
+                        <img
+                          [src]="item"
+                          alt="gallery item"
+                          class="h-28 w-full rounded object-cover"
+                        />
+                      }
+
+                      <button
+                        type="button"
+                        (click)="removeGalleryItem(field.key.toString(), item)"
+                        class="absolute top-1 right-1 rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
           }
 
           @if (field.hint && field.type !== 'checkbox') {
@@ -242,7 +367,8 @@
               {{ field.hint }}
             </p>
           }
-        </div>
+          </div>
+        }
       }
     </div>
   }

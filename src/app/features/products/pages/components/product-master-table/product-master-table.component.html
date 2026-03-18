@@ -9,10 +9,57 @@
             (change)="toggleAll($any($event.target).checked)"
           />
         </th>
-        <th class="px-4 py-3 text-left">ID</th>
-        <th class="px-4 py-3 text-left">OAM Key</th>
-        <th class="px-4 py-3 text-left">Template</th>
-        <th class="px-4 py-3 text-left">Status</th>
+        @if (showColumn('id')) {
+          <th class="px-4 py-3 text-left">ID</th>
+        }
+        @if (showColumn('upc')) {
+          <th class="px-4 py-3 text-left">UPC</th>
+        }
+        @if (showColumn('oam_key')) {
+          <th class="px-4 py-3 text-left">OAM Key</th>
+        }
+        @if (showColumn('template_name')) {
+          <th class="px-4 py-3 text-left">Template</th>
+        }
+        @if (showColumn('status')) {
+          <th class="px-4 py-3 text-left">Status</th>
+        }
+        @if (showColumn('product_family')) {
+          <th class="px-4 py-3 text-left">Family</th>
+        }
+        @if (showColumn('gender')) {
+          <th class="px-4 py-3 text-left">Gender</th>
+        }
+        @if (showColumn('brand')) {
+          <th class="px-4 py-3 text-left">Brand</th>
+        }
+        @if (showColumn('collection')) {
+          <th class="px-4 py-3 text-left">Collection</th>
+        }
+        @if (showColumn('made_in')) {
+          <th class="px-4 py-3 text-left">Made In</th>
+        }
+        @if (showColumn('description_short')) {
+          <th class="px-4 py-3 text-left">Description</th>
+        }
+        @if (showColumn('created_by')) {
+          <th class="px-4 py-3 text-left">Created By</th>
+        }
+        @if (showColumn('approved_by')) {
+          <th class="px-4 py-3 text-left">Approved By</th>
+        }
+        @if (showColumn('approved_at')) {
+          <th class="px-4 py-3 text-left">Approved At</th>
+        }
+        @if (showColumn('primary_image')) {
+          <th class="px-4 py-3 text-left">Image</th>
+        }
+        @if (showColumn('gallery_count')) {
+          <th class="px-4 py-3 text-left">Gallery</th>
+        }
+        @if (showColumn('variants_count')) {
+          <th class="px-4 py-3 text-left">Variants</th>
+        }
       </tr>
     </thead>
 
@@ -27,44 +74,116 @@
             />
           </td>
 
-          <td class="px-4 py-3">{{ item.id }}</td>
+          @if (showColumn('id')) {
+            <td class="px-4 py-3">{{ item.id }}</td>
+          }
 
-          <td class="px-4 py-3">
-            <app-editable-cell
-              [value]="item.oam_key || ''"
-              [disabled]="inlineEditDisabled"
-              placeholder="OAM Key"
-              (save)="emitInlineSave(item.id, 'oam_key', $event)"
-            >
-            </app-editable-cell>
-          </td>
+          @if (showColumn('upc')) {
+            <td class="px-4 py-3">{{ item.upc || '—' }}</td>
+          }
 
-          <td class="px-4 py-3">
-            <app-editable-cell
-              [value]="item.template_name || ''"
-              [disabled]="inlineEditDisabled"
-              placeholder="Template name"
-              (save)="emitInlineSave(item.id, 'template_name', $event)"
-            >
-            </app-editable-cell>
-          </td>
+          @if (showColumn('oam_key')) {
+            <td class="px-4 py-3">
+              <app-editable-cell
+                [value]="item.oam_key || ''"
+                [disabled]="inlineEditDisabled"
+                placeholder="OAM Key"
+                (save)="emitInlineSave(item.id, 'oam_key', $event)"
+              >
+              </app-editable-cell>
+            </td>
+          }
 
-          <td class="px-4 py-3">
-            <app-editable-cell
-              [value]="item.status || ''"
-              type="select"
-              [disabled]="inlineEditDisabled"
-              [options]="statusOptions"
-              (save)="emitInlineSave(item.id, 'status', $event)"
-            >
-            </app-editable-cell>
-          </td>
+          @if (showColumn('template_name')) {
+            <td class="px-4 py-3">
+              <app-editable-cell
+                [value]="item.template_name || ''"
+                [disabled]="inlineEditDisabled"
+                placeholder="Template name"
+                (save)="emitInlineSave(item.id, 'template_name', $event)"
+              >
+              </app-editable-cell>
+            </td>
+          }
+
+          @if (showColumn('status')) {
+            <td class="px-4 py-3">
+              <app-editable-cell
+                [value]="item.status || ''"
+                type="select"
+                [disabled]="inlineEditDisabled"
+                [options]="statusOptions"
+                (save)="emitInlineSave(item.id, 'status', $event)"
+              >
+              </app-editable-cell>
+            </td>
+          }
+
+          @if (showColumn('product_family')) {
+            <td class="px-4 py-3">{{ item.product_family || '—' }}</td>
+          }
+
+          @if (showColumn('gender')) {
+            <td class="px-4 py-3">{{ item.gender || '—' }}</td>
+          }
+
+          @if (showColumn('brand')) {
+            <td class="px-4 py-3">{{ getBrandName(item) }}</td>
+          }
+
+          @if (showColumn('collection')) {
+            <td class="px-4 py-3">{{ getCollectionName(item) }}</td>
+          }
+
+          @if (showColumn('made_in')) {
+            <td class="px-4 py-3">{{ item.made_in || '—' }}</td>
+          }
+
+          @if (showColumn('description_short')) {
+            <td class="px-4 py-3 max-w-xs truncate" [title]="item.description_short || ''">
+              {{ item.description_short || '—' }}
+            </td>
+          }
+
+          @if (showColumn('created_by')) {
+            <td class="px-4 py-3">{{ item.created_by ?? '—' }}</td>
+          }
+
+          @if (showColumn('approved_by')) {
+            <td class="px-4 py-3">{{ item.approved_by ?? '—' }}</td>
+          }
+
+          @if (showColumn('approved_at')) {
+            <td class="px-4 py-3">{{ item.approved_at || '—' }}</td>
+          }
+
+          @if (showColumn('primary_image')) {
+            <td class="px-4 py-3">
+              @if (item.primary_image_url) {
+                <img
+                  [src]="item.primary_image_url"
+                  alt="product image"
+                  class="h-10 w-10 rounded border object-cover"
+                />
+              } @else {
+                <span class="text-gray-400">—</span>
+              }
+            </td>
+          }
+
+          @if (showColumn('gallery_count')) {
+            <td class="px-4 py-3">{{ item.gallery_urls?.length || 0 }}</td>
+          }
+
+          @if (showColumn('variants_count')) {
+            <td class="px-4 py-3">{{ item.oam_product_variants?.length || 0 }}</td>
+          }
         </tr>
       }
 
       @if (items.length === 0) {
         <tr>
-          <td colspan="6" class="px-4 py-6 text-center text-gray-500">
+          <td [attr.colspan]="emptyStateColspan" class="px-4 py-6 text-center text-gray-500">
             No hay productos disponibles.
           </td>
         </tr>

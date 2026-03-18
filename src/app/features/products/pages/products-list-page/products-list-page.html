@@ -16,6 +16,7 @@
     [brands]="brands()"
     [collections]="collections()"
     (filtersChanged)="onUpdateFilters($event)"
+    (activeFiltersChanged)="onActiveMasterFiltersChange($event)"
   >
   </app-filter-product-page>
 
@@ -32,6 +33,7 @@
     <app-product-master-table
       [items]="products()"
       [selectedIds]="selectedProductIds"
+      [visibleColumns]="visibleMasterColumns()"
       [inlineEditDisabled]="sequentialEditActive()"
       (selectionChange)="onProductSelectionChange($event)"
       (editRow)="editProduct($event)"
@@ -83,8 +85,8 @@
       [editConfig]="computedProductEditConfig"
       [brands]="brands()"
       [collections]="collections()"
-      [selectedProductId]="selectedProductId()"
-      [productVariants]="productVariants()"
+      [selectedProductId]="canManageVariants() ? selectedProductId() : null"
+      [productVariants]="canManageVariants() ? productVariants() : []"
       [selectedBrand]="selectedBrand()"
       [selectedCollection]="selectedCollection()"
       [brandMode]="brandMode()"
@@ -102,10 +104,11 @@
       (editCollection)="startEditCollection($event)"
       (showCollection)="showCollection($event)"
       (deleteCollection)="deleteCollection($event)"
-      [selectedVariantId]="selectedVariantId()"
+      [selectedVariantId]="canManageVariants() ? selectedVariantId() : null"
       (editVariant)="editProductVariant($event)"
       (deleteVariant)="deleteProductVariant($event)"
       (createVariant)="resetVariantForm()"
+      (fullEditVariants)="openFullEditVariants()"
     >
     </app-product-master-workspace>
   </app-sidebar>

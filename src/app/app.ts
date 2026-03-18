@@ -1,13 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Shell } from './layout/shell/shell';
 
 @Component({
   selector: 'app-root',
-  imports: [Shell],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
-  protected readonly title = signal('oam-master-products');
+  // Componente raiz que solo renderiza el RouterOutlet principal.
 }

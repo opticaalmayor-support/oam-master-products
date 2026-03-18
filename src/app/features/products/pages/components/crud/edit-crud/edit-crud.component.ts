@@ -45,4 +45,131 @@ export class EditCrudComponent {
   trackByKey(_: number, field: CrudFieldConfig): string {
     return String(field.key);
   }
+
+  onImageSelected(event: Event, fieldKey: string): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    // Convierte imagenes compatibles a webp para optimizar peso antes de guardar preview.
+    void this.prepareFileAsDataUrl(file)
+      .then((dataUrl) => {
+        this.form.get(fieldKey)?.setValue(dataUrl);
+        this.form.get(fieldKey)?.markAsDirty();
+        this.form.get(fieldKey)?.updateValueAndValidity();
+      })
+      .catch((error) => {
+        console.error(error);
+      })
+      .finally(() => {
+        input.value = '';
+      });
+  }
+
+  onGallerySelected(event: Event, fieldKey: string): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+
+    if (!files || !files.length) return;
+
+    const currentValue = this.form.get(fieldKey)?.value;
+    const current: string[] = Array.isArray(currentValue) ? currentValue : [];
+
+    const readers = Array.from(files).map((file) => this.prepareFileAsDataUrl(file));
+
+    Promise.all(readers)
+      .then((results) => {
+        this.form.get(fieldKey)?.setValue([...current, ...results]);
+        this.form.get(fieldKey)?.markAsDirty();
+        this.form.get(fieldKey)?.updateValueAndValidity();
+      })
+      .catch((error) => {
+        console.error(error);
+      })
+      .finally(() => {
+        input.value = '';
+      });
+  }
+
+  removeGalleryItem(fieldKey: string, item: string): void {
+    const currentValue = this.form.get(fieldKey)?.value;
+    const current: string[] = Array.isArray(currentValue) ? currentValue : [];
+
+    this.form.get(fieldKey)?.setValue(current.filter((url) => url !== item));
+    this.form.get(fieldKey)?.markAsDirty();
+    this.form.get(fieldKey)?.updateValueAndValidity();
+  }
+
+  isVideo(url: string): boolean {
+    if (!url) return false;
+
+    if (url.startsWith('data:video/')) return true;
+
+    return /\.(mp4|webm|ogg|mov)$/i.test(url);
+  }
+
+  // Convierte un archivo a data URL, pasando por webp cuando sea imagen compatible.
+  private async prepareFileAsDataUrl(file: File): Promise<string> {
+    const normalizedFile = await this.convertImageToWebpIfNeeded(file);
+    return this.fileToDataUrl(normalizedFile);
+  }
+
+  // Determina si un archivo imagen puede convertirse a webp de forma segura.
+  private shouldConvertToWebp(file: File): boolean {
+    if (!file.type.startsWith('image/')) {
+      return false;
+    }
+
+    if (file.type === 'image/webp') {
+      return false;
+    }
+
+    return ['image/jpeg', 'image/png', 'image/bmp', 'image/tiff'].includes(file.type);
+  }
+
+  // Convierte imagenes compatibles a webp con calidad balanceada.
+  private async convertImageToWebpIfNeeded(file: File): Promise<File> {
+    if (!this.shouldConvertToWebp(file)) {
+      return file;
+    }
+
+    const imageBitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    canvas.width = imageBitmap.width;
+    canvas.height = imageBitmap.height;
+
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      imageBitmap.close();
+      return file;
+    }
+
+    context.drawImage(imageBitmap, 0, 0);
+    imageBitmap.close();
+
+    const webpBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/webp', 0.8);
+    });
+
+    if (!webpBlob) {
+      return file;
+    }
+
+    const baseName = file.name.replace(/\.[^.]+$/, '');
+    return new File([webpBlob], `${baseName}.webp`, { type: 'image/webp' });
+  }
+
+  // Lee un archivo como data URL para previews y envio en formulario.
+  private fileToDataUrl(file: File): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error(`No se pudo leer ${file.name}`));
+
+      reader.readAsDataURL(file);
+    });
+  }
 }

@@ -9,6 +9,25 @@ type InlineEditEvent = {
   value: string;
 };
 
+type ProductMasterTableColumnKey =
+  | 'id'
+  | 'oam_key'
+  | 'template_name'
+  | 'status'
+  | 'upc'
+  | 'product_family'
+  | 'gender'
+  | 'brand'
+  | 'collection'
+  | 'made_in'
+  | 'description_short'
+  | 'created_by'
+  | 'approved_by'
+  | 'approved_at'
+  | 'primary_image'
+  | 'gallery_count'
+  | 'variants_count';
+
 @Component({
   selector: 'app-product-master-table',
   standalone: true,
@@ -19,6 +38,12 @@ export class ProductMasterTableComponent {
   @Input() items: OamProductMaster[] = [];
   @Input() selectedIds: number[] = [];
   @Input() inlineEditDisabled = false;
+  @Input() visibleColumns: ProductMasterTableColumnKey[] = [
+    'id',
+    'oam_key',
+    'template_name',
+    'status',
+  ];
 
   @Output() selectionChange = new EventEmitter<number[]>();
   @Output() editRow = new EventEmitter<OamProductMaster>();
@@ -61,5 +86,25 @@ export class ProductMasterTableComponent {
 
   emitInlineSave(id: number, field: 'oam_key' | 'template_name' | 'status', value: string): void {
     this.inlineSave.emit({ id, field, value });
+  }
+
+  // Verifica si una columna debe mostrarse segun filtros activos.
+  showColumn(column: ProductMasterTableColumnKey): boolean {
+    return this.visibleColumns.includes(column);
+  }
+
+  // Entrega el total de columnas renderizadas para el estado vacio.
+  get emptyStateColspan(): number {
+    return this.visibleColumns.length + 1;
+  }
+
+  // Devuelve nombre de marca legible para celdas de tabla.
+  getBrandName(item: OamProductMaster): string {
+    return item.oam_brand?.name ?? (item.brand_id ? String(item.brand_id) : '—');
+  }
+
+  // Devuelve nombre de coleccion legible para celdas de tabla.
+  getCollectionName(item: OamProductMaster): string {
+    return item.oam_collection?.name ?? (item.collection_id ? String(item.collection_id) : '—');
   }
 }

@@ -18,8 +18,8 @@
             <button
               type="button"
               class="flex items-center w-full justify-between px-2 py-1.5 text-body rounded-base hover:bg-neutral-tertiary hover:text-fg-brand cursor-pointer group"
-              [attr.aria-controls]="'dropdown-' + item.label.toLowerCase().replace(/\s+/g, '-')"
-              [attr.data-collapse-toggle]="'dropdown-' + item.label.toLowerCase().replace(/\s+/g, '-')">
+              [attr.aria-controls]="'dropdown-' + getDropdownId(item.label)"
+              [attr.data-collapse-toggle]="'dropdown-' + getDropdownId(item.label)">
               <div class="flex items-center">
                 <svg class="shrink-0 w-5 h-5 transition duration-75 group-hover:text-fg-brand" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" [innerHTML]="item.icon"></svg>
                 <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap" [textContent]="item.label"></span>
@@ -28,7 +28,7 @@
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/>
               </svg>
             </button>
-            <ul [id]="'dropdown-' + item.label.toLowerCase().replace(/\s+/g, '-')" class="hidden py-2 space-y-2">
+            <ul [id]="'dropdown-' + getDropdownId(item.label)" class="hidden py-2 space-y-2">
               @for (child of item.children; track child.label) {
                 <li>
                   <a

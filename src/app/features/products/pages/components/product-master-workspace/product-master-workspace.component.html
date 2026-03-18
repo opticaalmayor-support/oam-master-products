@@ -321,15 +321,6 @@
               />
             </div>
 
-            <div>
-              <label class="mb-1 block text-sm font-medium text-gray-700">Primary Image URL</label>
-              <input
-                type="text"
-                formControlName="primary_image_url"
-                class="w-full rounded border px-3 py-2 text-sm"
-              />
-            </div>
-
             <label class="flex items-center gap-2 text-sm text-gray-700">
               <input type="checkbox" formControlName="is_active" />
               Variante activa
@@ -356,7 +347,18 @@
         </div>
 
         <div class="rounded border p-4">
-          <h4 class="mb-4 text-sm font-semibold text-gray-800">Variantes registradas</h4>
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <h4 class="text-sm font-semibold text-gray-800">Variantes registradas</h4>
+
+            <button
+              *ngIf="selectedProductId && productVariants.length > 1"
+              type="button"
+              class="rounded border border-indigo-300 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+              (click)="fullEditVariants.emit()"
+            >
+              Full Edit
+            </button>
+          </div>
 
           <div
             *ngIf="!productVariants.length"
