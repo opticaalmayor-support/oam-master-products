@@ -148,10 +148,18 @@
 
     <button
       type="button"
+      (click)="clearValues()"
+      class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700"
+    >
+      Limpiar valores
+    </button>
+
+    <button
+      type="button"
       (click)="clearFilters()"
       class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700"
     >
-      Limpiar
+      Limpiar filtros
     </button>
   </div>
 </div>

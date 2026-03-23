@@ -57,6 +57,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'nywd',
+        title: 'NYWD Catalog | OAM Master',
+        loadComponent: () =>
+          import('./features/maestro/nywd/pages/nywd-products.page').then((m) => m.NywdProductsPage),
+      },
+      {
         path: 'review',
         title: 'Review Queue | OAM Master',
         loadComponent: () =>

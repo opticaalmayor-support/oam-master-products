@@ -1,0 +1,154 @@
+<section class="space-y-5">
+  <header class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-teal-600">Supplier 3</p>
+        <h1 class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">Catalogo NYWD</h1>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Listado paginado desde Maestro con imagenes firmadas y detalle raw.</p>
+      </div>
+
+      <div class="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-gray-900/70">
+        <span class="text-gray-500 dark:text-gray-400">Run activo</span>
+        <strong class="text-gray-900 dark:text-white">{{ runId() ?? 'Sin run' }}</strong>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+      <input
+        type="text"
+        [ngModel]="searchDraft()"
+        (ngModelChange)="searchDraft.set($event)"
+        (keyup.enter)="search()"
+        placeholder="Buscar por nombre, SKU, marca o categoria"
+        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-teal-500 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+      <div class="flex gap-2">
+        <button type="button" (click)="search()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">Buscar</button>
+        <button type="button" (click)="clearSearch()" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">Limpiar</button>
+      </div>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300 sm:flex-row sm:items-center sm:justify-between">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="retry()" class="rounded-md border border-red-300 px-3 py-1.5 font-medium hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900/30">Reintentar</button>
+    </div>
+  }
+
+  @if (isLoadingProducts()) {
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
+        <article class="h-72 animate-pulse rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"></article>
+      }
+    </div>
+  } @else if (products().length === 0 && !errorMessage()) {
+    <div class="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+      No hay productos para los filtros actuales.
+    </div>
+  } @else {
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      @for (item of products(); track trackByRawId($index, item)) {
+        <article class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex h-44 items-center justify-center bg-gray-100 dark:bg-gray-900/70">
+            @if (item.media.thumbnail_main_url) {
+              <img [src]="item.media.thumbnail_main_url" [alt]="item.base.name ?? 'Producto NYWD'" class="h-full w-full object-cover" />
+            } @else {
+              <span class="text-xs uppercase tracking-wide text-gray-400">Sin imagen</span>
+            }
+          </div>
+
+          <div class="space-y-2 p-3">
+            <h2 class="line-clamp-2 text-sm font-semibold text-gray-900 dark:text-white">{{ item.base.name ?? 'Sin nombre' }}</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">SKU: {{ item.base.sku ?? 'N/A' }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.base.brand ?? 'Sin marca' }} · {{ item.base.category ?? 'Sin categoria' }}</p>
+            <div class="flex items-end justify-between">
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Precio</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.base.price ?? 'N/A' }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-500 dark:text-gray-400">Stock</p>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ item.base.quantity ?? 'N/A' }}</p>
+              </div>
+            </div>
+
+            <button type="button" (click)="openDetail(item)" class="mt-1 w-full rounded-lg border border-teal-500 px-3 py-2 text-xs font-medium text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:hover:bg-teal-900/20">Ver detalle</button>
+          </div>
+        </article>
+      }
+    </div>
+
+    <footer class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-gray-500 dark:text-gray-400">
+        Pagina {{ pagination().current_page }} de {{ pagination().last_page }} · Total {{ pagination().total }}
+      </p>
+
+      <div class="flex items-center gap-2">
+        <button type="button" [disabled]="pagination().current_page <= 1" (click)="goToPage(pagination().current_page - 1)" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">Anterior</button>
+        <button type="button" [disabled]="pagination().current_page >= pagination().last_page" (click)="goToPage(pagination().current_page + 1)" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">Siguiente</button>
+      </div>
+    </footer>
+  }
+</section>
+
+@if (isDetailOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 p-4">
+    <article class="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-xl dark:bg-gray-800">
+      <header class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Detalle NYWD</h3>
+        <button type="button" (click)="closeDetail()" class="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">Cerrar</button>
+      </header>
+
+      <div class="max-h-[80vh] space-y-4 overflow-auto p-4">
+        @if (isLoadingDetail()) {
+          <div class="h-24 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-700"></div>
+        }
+
+        @if (detailError()) {
+          <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">{{ detailError() }}</p>
+        }
+
+        @if (selectedDetail(); as detail) {
+          <section class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Raw ID</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ detail.raw_id }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+              <p class="text-xs text-gray-500 dark:text-gray-400">SKU</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ detail.base.sku ?? 'N/A' }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Nombre</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ detail.base.name ?? 'N/A' }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+              <p class="text-xs text-gray-500 dark:text-gray-400">Marca / Categoria</p>
+              <p class="font-medium text-gray-900 dark:text-white">{{ detail.base.brand ?? 'N/A' }} · {{ detail.base.category ?? 'N/A' }}</p>
+            </div>
+          </section>
+
+          <section class="space-y-2">
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Atributos extras NYWD</h4>
+            @if ((detail.attributes | keyvalue).length === 0) {
+              <p class="rounded-lg border border-gray-200 p-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">Este registro no tiene atributos extras.</p>
+            } @else {
+              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <table class="min-w-full text-left text-sm">
+                  <tbody>
+                    @for (entry of detail.attributes | keyvalue; track entry.key) {
+                      <tr class="border-t border-gray-100 first:border-t-0 dark:border-gray-700">
+                        <td class="w-1/3 bg-gray-50 px-3 py-2 font-medium text-gray-700 dark:bg-gray-900/60 dark:text-gray-200">{{ entry.key }}</td>
+                        <td class="px-3 py-2 text-gray-600 dark:text-gray-300">{{ entry.value ?? 'N/A' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        }
+      </div>
+    </article>
+  </div>
+}

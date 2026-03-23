@@ -64,8 +64,8 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
     {
       name: 'Clasificación',
       items: [
-        { id: 'brand_id', label: 'Marca', type: 'select' },
         { id: 'collection_id', label: 'Colección', type: 'select' },
+        { id: 'brand_id', label: 'Marca', type: 'select' },
         { id: 'product_family', label: 'Familia de Producto', type: 'select' },
         { id: 'gender', label: 'Género', type: 'select' },
         { id: 'status', label: 'Estado', type: 'select' },
@@ -185,7 +185,7 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
   }
 
   private getInitialActiveFilters(mode: FilterMode): string[] {
-    return mode === 'variant' ? ['internal_sku'] : ['upc'];
+    return mode === 'variant' ? ['internal_sku'] : ['upc', 'collection_id', 'brand_id'];
   }
 
   toggleDropdown(groupName: string): void {
@@ -198,14 +198,16 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
   }
 
   toggleFilter(fieldId: string): void {
-    this.activeFilters.update((current) => {
-      if (current.includes(fieldId)) {
-        delete this.filterValues[fieldId];
-        return current.filter((id) => id !== fieldId);
-      }
+    const current = this.activeFilters();
+    const next = current.includes(fieldId)
+      ? current.filter((id) => id !== fieldId)
+      : [...current, fieldId];
 
-      return [...current, fieldId];
-    });
+    if (current.includes(fieldId)) {
+      delete this.filterValues[fieldId];
+    }
+
+    this.activeFilters.set(this.getOrderedActiveFilters(next));
 
     // Persiste cambios de filtros activos para conservarlos al refrescar.
     this.persistStateToStorage();
@@ -253,6 +255,12 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
   clearFilters(): void {
     this.resetState(true);
     this.openDropdown.set(null);
+  }
+
+  clearValues(): void {
+    this.filterValues = {};
+    this.persistStateToStorage();
+    this.filtersChanged.emit({});
   }
 
   private resetState(emit = false): void {
@@ -317,11 +325,17 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
       const sanitizedActive = persistedActive.filter((id) => availableIds.has(id));
 
       // Incluye en activos todo filtro que tenga valor guardado para mostrar su campo.
-      const activeWithValues = Array.from(new Set([...sanitizedActive, ...Object.keys(sanitizedValues)]));
+      const requiredDefaults = this.mode === 'master' ? ['upc', 'collection_id', 'brand_id'] : [];
+
+      const activeWithValues = Array.from(
+        new Set([...requiredDefaults, ...sanitizedActive, ...Object.keys(sanitizedValues)]),
+      );
 
       this.filterValues = sanitizedValues;
       this.activeFilters.set(
-        activeWithValues.length ? activeWithValues : this.getInitialActiveFilters(this.mode),
+        this.getOrderedActiveFilters(
+          activeWithValues.length ? activeWithValues : this.getInitialActiveFilters(this.mode),
+        ),
       );
 
       return Object.keys(sanitizedValues).length > 0 || activeWithValues.length > 0;
@@ -340,6 +354,31 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
     };
 
     localStorage.setItem(this.getStorageKey(), JSON.stringify(payload));
+  }
+
+  private getOrderedActiveFilters(filters: string[]): string[] {
+    if (this.mode === 'variant') {
+      return filters;
+    }
+
+    const priority: Record<string, number> = {
+      upc: 1,
+      oam_key: 2,
+      template_name: 3,
+      collection_id: 4,
+      brand_id: 5,
+    };
+
+    return [...filters].sort((a, b) => {
+      const aPriority = priority[a] ?? 999;
+      const bPriority = priority[b] ?? 999;
+
+      if (aPriority === bPriority) {
+        return a.localeCompare(b);
+      }
+
+      return aPriority - bPriority;
+    });
   }
 
   getSelectOptions(fieldId: string): Array<{ value: string | number; label: string }> {
@@ -367,18 +406,18 @@ export class FilterProductPageComponent implements OnInit, OnChanges {
 
       case 'gender':
         return [
-          { value: 'male', label: 'Male' },
-          { value: 'female', label: 'Female' },
+          { value: 'men', label: 'Men' },
+          { value: 'women', label: 'Women' },
           { value: 'unisex', label: 'Unisex' },
           { value: 'kids', label: 'Kids' },
         ];
 
       case 'status':
         return [
+          { value: 'active', label: 'Active' },
           { value: 'draft', label: 'Draft' },
-          { value: 'pending', label: 'Pending' },
-          { value: 'approved', label: 'Approved' },
-          { value: 'archived', label: 'Archived' },
+          { value: 'blocked', label: 'Blocked' },
+          { value: 'discontinued', label: 'Discontinued' },
         ];
 
       default:

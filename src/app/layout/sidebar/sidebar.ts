@@ -39,6 +39,7 @@ export class Sidebar {
       children: [
         { label: 'All Runs', path: '/runs', icon: '' },
         { label: 'Upload Catalog', path: '/runs/upload', icon: '' },
+        { label: 'NYWD Catalog', path: '/nywd', icon: '' },
       ],
     },
     {

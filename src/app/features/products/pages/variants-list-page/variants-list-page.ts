@@ -54,6 +54,7 @@ export class VariantsListPage implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
   private variantService = inject(OamProductVariantService);
+  private readonly nonNumericTextPattern = /^(?!\d+$).+/;
 
   private destroy$ = new Subject<void>();
   private variantsRequest$ = new Subject<VariantQueryParams>();
@@ -91,6 +92,9 @@ export class VariantsListPage implements OnInit, OnDestroy {
   private savingVariantForm = false;
   private autoFullEditRequested = false;
   private autoFullEditProductMasterId: number | null = null;
+  private autoVariantEditRequested = false;
+  private autoVariantEditProductMasterId: number | null = null;
+  private autoVariantEditVariantId: number | null = null;
 
   public variants = signal<OamProductVariant[]>([]);
   public loading = signal<boolean>(false);
@@ -109,7 +113,7 @@ export class VariantsListPage implements OnInit, OnDestroy {
     internal_sku: ['', [Validators.required]],
     barcode: [''],
     color_code: [''],
-    color_description: [''],
+    color_description: ['', [Validators.pattern(this.nonNumericTextPattern)]],
     size_lens: [''],
     size_bridge: [''],
     size_temple: [''],
@@ -274,6 +278,7 @@ export class VariantsListPage implements OnInit, OnDestroy {
             tap((response) => {
               this.variants.set(response?.data || []);
               this.loading.set(false);
+              this.handleAutoVariantEditAfterLoad();
               this.handleAutoFullEditAfterLoad();
             }),
             catchError((error) => {
@@ -299,6 +304,11 @@ export class VariantsListPage implements OnInit, OnDestroy {
       this.currentFilters.set({
         ...filters,
         product_master_id: this.autoFullEditProductMasterId,
+      });
+    } else if (this.autoVariantEditRequested && this.autoVariantEditProductMasterId) {
+      this.currentFilters.set({
+        ...filters,
+        product_master_id: this.autoVariantEditProductMasterId,
       });
     } else {
       this.currentFilters.set(filters);
@@ -741,7 +751,10 @@ export class VariantsListPage implements OnInit, OnDestroy {
   private applyInitialRouteFilters(): void {
     const productMasterIdParam = this.route.snapshot.queryParamMap.get('product_master_id');
     const autoFullEditParam = this.route.snapshot.queryParamMap.get('auto_full_edit');
+    const variantIdParam = this.route.snapshot.queryParamMap.get('variant_id');
+    const autoEditVariantParam = this.route.snapshot.queryParamMap.get('auto_edit_variant');
     const parsedProductMasterId = Number(productMasterIdParam);
+    const parsedVariantId = Number(variantIdParam);
 
     if (!productMasterIdParam || Number.isNaN(parsedProductMasterId) || parsedProductMasterId <= 0) {
       return;
@@ -756,6 +769,48 @@ export class VariantsListPage implements OnInit, OnDestroy {
       this.autoFullEditRequested = true;
       this.autoFullEditProductMasterId = parsedProductMasterId;
     }
+
+    if (
+      autoEditVariantParam === '1' &&
+      variantIdParam &&
+      !Number.isNaN(parsedVariantId) &&
+      parsedVariantId > 0
+    ) {
+      this.autoVariantEditRequested = true;
+      this.autoVariantEditProductMasterId = parsedProductMasterId;
+      this.autoVariantEditVariantId = parsedVariantId;
+    }
+  }
+
+  // Abre automaticamente una variante puntual cuando se redirige desde Product Master.
+  private handleAutoVariantEditAfterLoad(): void {
+    if (!this.autoVariantEditRequested || !this.autoVariantEditVariantId) {
+      return;
+    }
+
+    const targetVariant = this.variants().find((variant) => {
+      const sameVariant = Number(variant.id) === this.autoVariantEditVariantId;
+
+      if (!sameVariant) {
+        return false;
+      }
+
+      if (!this.autoVariantEditProductMasterId) {
+        return true;
+      }
+
+      return Number(variant.product_master_id) === this.autoVariantEditProductMasterId;
+    });
+
+    this.autoVariantEditRequested = false;
+
+    if (!targetVariant) {
+      return;
+    }
+
+    this.selectedIds = [targetVariant.id];
+    this.editVariant(targetVariant);
+    this.scrollToVariantSidebar();
   }
 
   // Selecciona variantes del product master filtrado y abre edicion multiple automaticamente.
@@ -776,5 +831,18 @@ export class VariantsListPage implements OnInit, OnDestroy {
     this.selectedIds = targetVariantIds;
     this.editSelected();
     this.autoFullEditRequested = false;
+  }
+
+  private scrollToVariantSidebar(): void {
+    setTimeout(() => {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }, 120);
   }
 }

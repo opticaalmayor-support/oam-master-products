@@ -80,6 +80,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
   private productVariantService = inject(OamProductVariantService);
   private brandService = inject(OamBrandService);
   private collectionService = inject(OamCollectionService);
+  private readonly nonNumericTextPattern = /^(?!\d+$).+/;
 
   private destroy$ = new Subject<void>();
   private productRequest$ = new Subject<ProductRequest>();
@@ -146,12 +147,12 @@ export class ProductsListPage implements OnInit, OnDestroy {
   public productForm: FormGroup = this.fb.group({
     oam_key: ['', [Validators.required]],
     product_family: ['rx', [Validators.required]],
-    template_name: ['', [Validators.required]],
+    template_name: ['', [Validators.required, Validators.pattern(this.nonNumericTextPattern)]],
     status: ['active', [Validators.required]],
     gender: ['unisex', [Validators.required]],
     brand_id: [null],
     collection_id: [null],
-    description_short: [''],
+    description_short: ['', [Validators.pattern(this.nonNumericTextPattern)]],
     made_in: [''],
     attributes: this.fb.array([]),
     lens_features: this.fb.array([]),
@@ -162,7 +163,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
     internal_sku: ['', [Validators.required]],
     barcode: [''],
     color_code: [''],
-    color_description: [''],
+    color_description: ['', [Validators.pattern(this.nonNumericTextPattern)]],
     size_lens: [''],
     size_bridge: [''],
     size_temple: [''],
@@ -546,7 +547,7 @@ export class ProductsListPage implements OnInit, OnDestroy {
     });
   }
 
-  onUpdateFilters(filters: Record<string, any>): void {
+  onUpdateFilters(filters: ProductQueryParams): void {
     this.currentFilters = filters;
     this.loadProducts();
   }
@@ -1242,6 +1243,23 @@ export class ProductsListPage implements OnInit, OnDestroy {
       queryParams: {
         product_master_id: productMasterId,
         auto_full_edit: 1,
+      },
+    });
+  }
+
+  // Redirige a /variants y abre edicion puntual de una variante con soporte de media.
+  openVariantImageEdit(variantId: number): void {
+    const productMasterId = this.selectedProductId();
+
+    if (!productMasterId || !variantId) {
+      return;
+    }
+
+    void this.router.navigate(['/variants'], {
+      queryParams: {
+        product_master_id: productMasterId,
+        variant_id: variantId,
+        auto_edit_variant: 1,
       },
     });
   }

@@ -1,7 +1,13 @@
 import { OamBrand } from '../../../../../../core/models';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 
 @Component({
   selector: 'app-brand-modal',
@@ -18,13 +24,52 @@ export class BrandModalComponent implements OnChanges {
   @Output() submitted = new EventEmitter<Partial<OamBrand>>();
 
   form!: FormGroup;
+  private readonly nonNumericTextPattern = /^(?!\d+$).+/;
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
-      name: ['', [Validators.required, Validators.maxLength(190)]],
+      name: [
+        '',
+        [
+          Validators.required,
+          Validators.maxLength(190),
+          Validators.pattern(this.nonNumericTextPattern),
+        ],
+      ],
       slug: ['', [Validators.required, Validators.maxLength(190)]],
       is_active: [true],
     });
+  }
+
+  getControl(fieldKey: string): AbstractControl | null {
+    return this.form.get(fieldKey);
+  }
+
+  shouldShowFieldError(fieldKey: string): boolean {
+    const control = this.getControl(fieldKey);
+    return Boolean(control && control.invalid && (control.touched || control.dirty));
+  }
+
+  getFieldErrorMessage(fieldKey: string, label: string): string {
+    const control = this.getControl(fieldKey);
+
+    if (!control?.errors) {
+      return '';
+    }
+
+    if (control.errors['required']) {
+      return `${label} es obligatorio.`;
+    }
+
+    if (control.errors['maxlength']) {
+      return `${label} supera el maximo permitido.`;
+    }
+
+    if (control.errors['pattern']) {
+      return `${label} no puede contener solo numeros.`;
+    }
+
+    return `Revisa el valor de ${label.toLowerCase()}.`;
   }
 
   ngOnChanges(changes: SimpleChanges): void {

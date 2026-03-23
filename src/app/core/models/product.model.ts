@@ -225,11 +225,25 @@ export interface OamReviewQueue {
 
 export interface ProductQueryParams {
   search?: string;
+  upc?: string;
+  oam_key?: string;
+  template_name?: string;
   brand_id?: number;
   collection_id?: number;
+  product_family?: string;
   status?: string;
   gender?: string;
-  is_active?: boolean;
+  made_in?: string;
+  description_short?: string;
+  description_long?: string;
+  tags?: string;
+  created_by?: number;
+  approved_by?: number;
+  approved_at_from?: string;
+  approved_at_to?: string;
+  is_discontinued?: boolean;
+  has_primary_image?: boolean;
+  has_gallery?: boolean;
   has_variants?: boolean;
   page?: number;
   per_page?: number;
@@ -243,7 +257,13 @@ export interface VariantQueryParams {
   internal_sku?: string;
   barcode?: string;
   color_code?: string;
+  color_description?: string;
+  size_lens?: string;
+  size_bridge?: string;
+  size_temple?: string;
+  size_std?: string;
   is_active?: boolean;
+  has_primary_image?: boolean;
   has_offers?: boolean;
   has_winner?: boolean;
   page?: number;

@@ -50,6 +50,7 @@ export class ProductMasterWorkspaceComponent {
   @Output() deleteVariant = new EventEmitter<number>();
   @Output() createVariant = new EventEmitter<void>();
   @Output() fullEditVariants = new EventEmitter<void>();
+  @Output() editVariantWithImage = new EventEmitter<number>();
 
   @Output() brandSubmitted = new EventEmitter<any>();
   @Output() collectionSubmitted = new EventEmitter<any>();
@@ -126,5 +127,41 @@ export class ProductMasterWorkspaceComponent {
 
   get isEditingVariant(): boolean {
     return !!this.selectedVariantId;
+  }
+
+  isVariantSelected(variantId: number): boolean {
+    return this.selectedVariantId === variantId;
+  }
+
+  onEditVariantWithImage(): void {
+    if (!this.selectedVariantId) {
+      return;
+    }
+
+    this.editVariantWithImage.emit(this.selectedVariantId);
+  }
+
+  onEditVariantFromList(variant: any): void {
+    this.editVariant.emit(variant);
+    this.scrollToVariantQuickForm();
+  }
+
+  private scrollToVariantQuickForm(): void {
+    setTimeout(() => {
+      if (typeof document === 'undefined') {
+        return;
+      }
+
+      const formContainer = document.getElementById('variant-quick-form');
+
+      if (!formContainer) {
+        return;
+      }
+
+      formContainer.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 120);
   }
 }

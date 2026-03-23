@@ -192,6 +192,12 @@
                   {{ field.hint }}
                 </p>
               }
+
+              @if (shouldShowFieldError(field.key.toString())) {
+                <p class="mt-1 text-xs text-red-600">
+                  {{ getFieldErrorMessage(field) }}
+                </p>
+              }
             </div>
           }
         </div>
@@ -362,6 +368,12 @@
           @if (field.hint && field.type !== 'checkbox') {
             <p class="mt-1 text-xs text-gray-500">
               {{ field.hint }}
+            </p>
+          }
+
+          @if (shouldShowFieldError(field.key.toString())) {
+            <p class="mt-1 text-xs text-red-600">
+              {{ getFieldErrorMessage(field) }}
             </p>
           }
         </div>

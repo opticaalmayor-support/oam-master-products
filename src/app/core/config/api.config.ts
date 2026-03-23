@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  //baseUrl: 'http://127.0.0.1:8000',
+  // baseUrl: 'http://127.0.0.1:8000',
   baseUrl: 'http://new-api.test',
   endpoints: {
     maestroAuthLogin: '/api/maestro/auth/login',
@@ -17,6 +17,9 @@ export const API_CONFIG = {
     CollectionByBrand: '/api/maestro/collections/brand/{brandId}',
     catalogRuns: '/api/maestro/runs/catalog',
     catalogRunUpload: '/api/maestro/runs/catalog/upload',
+    nywdLatestRun: '/api/maestro/nywd/runs/latest',
+    nywdProducts: '/api/maestro/nywd/products',
+    nywdProductDetail: '/api/maestro/nywd/products/{rawId}',
     OamProductVariantUploadMedia: '/api/maestro/product-variants/upload-media',
   },
 };

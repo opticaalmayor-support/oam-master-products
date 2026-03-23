@@ -26,6 +26,10 @@
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
             placeholder="Ej: Ray-Ban"
           />
+
+          @if (shouldShowFieldError('name')) {
+            <p class="mt-1 text-xs text-red-600">{{ getFieldErrorMessage('name', 'Name') }}</p>
+          }
         </div>
 
         <div>
@@ -38,6 +42,10 @@
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
             placeholder="Ej: ray-ban"
           />
+
+          @if (shouldShowFieldError('slug')) {
+            <p class="mt-1 text-xs text-red-600">{{ getFieldErrorMessage('slug', 'Slug') }}</p>
+          }
         </div>
 
         <div>
@@ -81,6 +89,10 @@
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
         placeholder="Ej: Ray-Ban"
       />
+
+      @if (shouldShowFieldError('name')) {
+        <p class="mt-1 text-xs text-red-600">{{ getFieldErrorMessage('name', 'Name') }}</p>
+      }
     </div>
 
     <div>
@@ -91,6 +103,10 @@
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
         placeholder="Ej: ray-ban"
       />
+
+      @if (shouldShowFieldError('slug')) {
+        <p class="mt-1 text-xs text-red-600">{{ getFieldErrorMessage('slug', 'Slug') }}</p>
+      }
     </div>
 
     <div>

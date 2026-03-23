@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CrudConfig, CrudFieldConfig } from '../crud.types';
 
 @Component({
@@ -44,6 +44,50 @@ export class CreateCrudComponent {
 
   trackByKey(_: number, field: CrudFieldConfig): string {
     return String(field.key);
+  }
+
+  getControl(fieldKey: string): AbstractControl | null {
+    return this.form.get(fieldKey);
+  }
+
+  shouldShowFieldError(fieldKey: string): boolean {
+    const control = this.getControl(fieldKey);
+    return Boolean(control && control.invalid && (control.touched || control.dirty));
+  }
+
+  getFieldErrorMessage(field: CrudFieldConfig): string {
+    const fieldKey = field.key.toString();
+    const control = this.getControl(fieldKey);
+
+    if (!control?.errors) {
+      return '';
+    }
+
+    if (control.errors['required']) {
+      return `${field.label} es obligatorio.`;
+    }
+
+    if (control.errors['requiredTrue']) {
+      return `Debes marcar ${field.label.toLowerCase()}.`;
+    }
+
+    if (control.errors['email']) {
+      return `Ingresa un correo valido en ${field.label.toLowerCase()}.`;
+    }
+
+    if (control.errors['maxlength']) {
+      return `${field.label} supera el maximo permitido.`;
+    }
+
+    if (control.errors['minlength']) {
+      return `${field.label} no cumple el minimo de caracteres.`;
+    }
+
+    if (control.errors['pattern']) {
+      return `${field.label} tiene un formato invalido.`;
+    }
+
+    return `Revisa el valor de ${field.label.toLowerCase()}.`;
   }
 
   onImageSelected(event: Event, fieldKey: string): void {
