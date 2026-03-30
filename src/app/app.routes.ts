@@ -56,12 +56,7 @@ export const routes: Routes = [
             (m) => m.RunComparePage,
           ),
       },
-      {
-        path: 'nywd',
-        title: 'NYWD Catalog | OAM Master',
-        loadComponent: () =>
-          import('./features/maestro/nywd/pages/nywd-products.page').then((m) => m.NywdProductsPage),
-      },
+
       {
         path: 'review',
         title: 'Review Queue | OAM Master',
@@ -148,6 +143,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/suppliers/pages/suppliers-page/suppliers-page').then(
             (m) => m.SuppliersPage,
+          ),
+      },
+      {
+        path: 'suppliers/:supplierId/settings',
+        title: 'Supplier Settings | OAM Master',
+        loadComponent: () =>
+          import('./features/suppliers/pages/supplier-settings-page/supplier-settings-page').then(
+            (m) => m.SupplierSettingsPage,
           ),
       },
 

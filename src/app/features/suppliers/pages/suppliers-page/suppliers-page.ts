@@ -1,20 +1,21 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { OamSupplier } from '../../../../core/models';
 import { getApiUrl } from '../../../../core/config/api.config';
 
 @Component({
   selector: 'app-suppliers-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './suppliers-page.html',
   styleUrl: './suppliers-page.scss',
 })
 export class SuppliersPage implements OnInit {
-  private http = inject(HttpClient);
-  private apiUrl = getApiUrl('suppliers');
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = getApiUrl('suppliers');
 
   suppliers = signal<OamSupplier[]>([]);
   isLoading = signal(false);
@@ -28,7 +29,7 @@ export class SuppliersPage implements OnInit {
     supplier_type: 'distributor',
     is_active: true,
     default_currency: 'USD',
-    settings: {}
+    settings: {},
   });
 
   supplierToDelete = signal<OamSupplier | null>(null);
@@ -37,18 +38,19 @@ export class SuppliersPage implements OnInit {
     const term = this.searchTerm().toLowerCase();
     if (!term) return this.suppliers();
 
-    return this.suppliers().filter(supplier =>
-      supplier.name.toLowerCase().includes(term) ||
-      supplier.code.toLowerCase().includes(term) ||
-      supplier.supplier_type.toLowerCase().includes(term)
+    return this.suppliers().filter(
+      (supplier) =>
+        supplier.name.toLowerCase().includes(term) ||
+        supplier.code.toLowerCase().includes(term) ||
+        supplier.supplier_type.toLowerCase().includes(term),
     );
   });
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadSuppliers();
   }
 
-  loadSuppliers() {
+  loadSuppliers(): void {
     this.isLoading.set(true);
     this.http.get<{ data: OamSupplier[] }>(this.apiUrl).subscribe({
       next: (res) => {
@@ -58,11 +60,11 @@ export class SuppliersPage implements OnInit {
       error: (error) => {
         console.error('Error loading suppliers:', error);
         this.isLoading.set(false);
-      }
+      },
     });
   }
 
-  openCreateModal() {
+  openCreateModal(): void {
     this.isEditMode.set(false);
     this.currentSupplier.set({
       code: '',
@@ -70,18 +72,18 @@ export class SuppliersPage implements OnInit {
       supplier_type: 'distributor',
       is_active: true,
       default_currency: 'USD',
-      settings: {}
+      settings: {},
     });
     this.showModal.set(true);
   }
 
-  openEditModal(supplier: OamSupplier) {
+  openEditModal(supplier: OamSupplier): void {
     this.isEditMode.set(true);
-    this.currentSupplier.set({ ...supplier });
+    this.currentSupplier.set({ ...supplier, settings: supplier.settings ?? {} });
     this.showModal.set(true);
   }
 
-  closeModal() {
+  closeModal(): void {
     this.showModal.set(false);
     this.currentSupplier.set({
       code: '',
@@ -89,17 +91,17 @@ export class SuppliersPage implements OnInit {
       supplier_type: 'distributor',
       is_active: true,
       default_currency: 'USD',
-      settings: {}
+      settings: {},
     });
   }
 
-  saveSupplier() {
+  saveSupplier(): void {
     const supplier = this.currentSupplier();
 
     if (this.isEditMode()) {
       this.http.put<OamSupplier>(`${this.apiUrl}/${supplier.id}`, supplier).subscribe({
         next: (updated) => {
-          const index = this.suppliers().findIndex(s => s.id === updated.id);
+          const index = this.suppliers().findIndex((s) => s.id === updated.id);
           if (index !== -1) {
             const newSuppliers = [...this.suppliers()];
             newSuppliers[index] = updated;
@@ -107,7 +109,7 @@ export class SuppliersPage implements OnInit {
           }
           this.closeModal();
         },
-        error: (error) => console.error('Error updating supplier:', error)
+        error: (error) => console.error('Error updating supplier:', error),
       });
     } else {
       this.http.post<OamSupplier>(this.apiUrl, supplier).subscribe({
@@ -115,57 +117,57 @@ export class SuppliersPage implements OnInit {
           this.suppliers.set([...this.suppliers(), created]);
           this.closeModal();
         },
-        error: (error) => console.error('Error creating supplier:', error)
+        error: (error) => console.error('Error creating supplier:', error),
       });
     }
   }
 
-  openDeleteModal(supplier: OamSupplier) {
+  openDeleteModal(supplier: OamSupplier): void {
     this.supplierToDelete.set(supplier);
     this.showDeleteModal.set(true);
   }
 
-  closeDeleteModal() {
+  closeDeleteModal(): void {
     this.showDeleteModal.set(false);
     this.supplierToDelete.set(null);
   }
 
-  confirmDelete() {
+  confirmDelete(): void {
     const supplier = this.supplierToDelete();
     if (!supplier) return;
 
     this.http.delete(`${this.apiUrl}/${supplier.id}`).subscribe({
       next: () => {
-        this.suppliers.set(this.suppliers().filter(s => s.id !== supplier.id));
+        this.suppliers.set(this.suppliers().filter((s) => s.id !== supplier.id));
         this.closeDeleteModal();
       },
-      error: (error) => console.error('Error deleting supplier:', error)
+      error: (error) => console.error('Error deleting supplier:', error),
     });
   }
 
-  updateField(field: keyof OamSupplier, value: any) {
-    this.currentSupplier.update(supplier => ({
+  updateField(field: keyof OamSupplier, value: unknown): void {
+    this.currentSupplier.update((supplier) => ({
       ...supplier,
-      [field]: value
+      [field]: value,
     }));
   }
 
   getSupplierTypeLabel(type: string): string {
     const types: Record<string, string> = {
-      'distributor': 'Distributor',
-      'manufacturer': 'Manufacturer',
-      'wholesaler': 'Wholesaler',
-      'dropshipper': 'Dropshipper'
+      distributor: 'Distributor',
+      manufacturer: 'Manufacturer',
+      wholesaler: 'Wholesaler',
+      dropshipper: 'Dropshipper',
     };
     return types[type] || type;
   }
 
   getSupplierTypeBadgeClass(type: string): string {
     const classes: Record<string, string> = {
-      'distributor': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-      'manufacturer': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-      'wholesaler': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-      'dropshipper': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+      distributor: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+      manufacturer: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+      wholesaler: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+      dropshipper: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
     };
     return classes[type] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
   }

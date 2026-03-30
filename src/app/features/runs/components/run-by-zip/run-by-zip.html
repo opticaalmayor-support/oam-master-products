@@ -2,8 +2,8 @@
 
   <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-1">Nuevo Run de Catalogo</h2>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Sube el catalogo del proveedor en formato ZIP (unico) o multiples archivos Excel (.xlsx, .xls).</p>
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-1">Init Run de Catalogo</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Inicializa una corrida por archivo o por integracion console seleccionando proveedor.</p>
     </div>
     <a routerLink="/runs" class="inline-flex items-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
       Ver listado de runs
@@ -31,25 +31,64 @@
         </select>
       </div>
 
-      <!-- Drop Zone -->
-      <div
-        class="drop-zone border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
-        [class.border-blue-400]="isDragOver()"
-        [class.bg-blue-50]="isDragOver()"
-        [class.border-gray-300]="!isDragOver()"
-        [class.dark:border-gray-600]="!isDragOver()"
-        (dragover)="onDragOver($event)"
-        (dragleave)="onDragLeave($event)"
-        (drop)="onDrop($event)"
-        (click)="triggerFileInput()">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de init</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            type="button"
+            (click)="setInitMode('file')"
+            class="rounded-lg border px-3 py-2 text-sm text-left transition-colors"
+            [class.border-blue-500]="initMode() === 'file'"
+            [class.bg-blue-50]="initMode() === 'file'"
+            [class.text-blue-700]="initMode() === 'file'"
+            [class.dark:border-blue-500]="initMode() === 'file'"
+            [class.dark:bg-blue-900/30]="initMode() === 'file'"
+            [class.dark:text-blue-300]="initMode() === 'file'"
+            [class.border-gray-300]="initMode() !== 'file'"
+            [class.text-gray-700]="initMode() !== 'file'"
+            [class.dark:border-gray-600]="initMode() !== 'file'"
+            [class.dark:text-gray-300]="initMode() !== 'file'">
+            Por archivo
+          </button>
+          <button
+            type="button"
+            (click)="setInitMode('console')"
+            class="rounded-lg border px-3 py-2 text-sm text-left transition-colors"
+            [class.border-blue-500]="initMode() === 'console'"
+            [class.bg-blue-50]="initMode() === 'console'"
+            [class.text-blue-700]="initMode() === 'console'"
+            [class.dark:border-blue-500]="initMode() === 'console'"
+            [class.dark:bg-blue-900/30]="initMode() === 'console'"
+            [class.dark:text-blue-300]="initMode() === 'console'"
+            [class.border-gray-300]="initMode() !== 'console'"
+            [class.text-gray-700]="initMode() !== 'console'"
+            [class.dark:border-gray-600]="initMode() !== 'console'"
+            [class.dark:text-gray-300]="initMode() !== 'console'">
+            Por console
+          </button>
+        </div>
+      </div>
 
-        <input
-          #fileInput
-          type="file"
-          accept=".zip,.xlsx,.xls"
-          multiple
-          class="hidden"
-          (change)="onFileSelected($event)">
+      @if (isFileMode()) {
+        <!-- Drop Zone -->
+        <div
+          class="drop-zone border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
+          [class.border-blue-400]="isDragOver()"
+          [class.bg-blue-50]="isDragOver()"
+          [class.border-gray-300]="!isDragOver()"
+          [class.dark:border-gray-600]="!isDragOver()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="triggerFileInput()">
+
+          <input
+            #fileInput
+            type="file"
+            accept=".zip,.xlsx,.xls"
+            multiple
+            class="hidden"
+            (change)="onFileSelected($event)">
 
         @if (!selectedFile() && selectedFiles().length === 0) {
           <div class="flex flex-col items-center gap-3">
@@ -121,7 +160,18 @@
             </button>
           </div>
         }
-      </div>
+        </div>
+      } @else {
+        <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+          Se creara un <strong>Init Run</strong> por {{ initMode() }} usando solo el proveedor seleccionado. No necesitas adjuntar archivos.
+          @if (getSelectedSupplierConsoleRunName() || getSelectedSupplierConsoleCommand()) {
+            <div class="mt-2 text-xs text-blue-700/90 dark:text-blue-300/90">
+              <div>Run name: {{ getSelectedSupplierConsoleRunName() || '—' }}</div>
+              <div>Command: {{ getSelectedSupplierConsoleCommand() || '—' }}</div>
+            </div>
+          }
+        </div>
+      }
 
       <!-- Error / Success -->
       @if (uploadError()) {
@@ -138,7 +188,11 @@
           <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
           </svg>
-          Archivo(s) subido(s) correctamente. El run fue creado como pendiente.
+          @if (isFileMode()) {
+            Archivo(s) subido(s) correctamente. El run fue creado como pendiente.
+          } @else {
+            Init Run creado correctamente por {{ initMode() }}.
+          }
         </div>
       }
 
@@ -166,7 +220,11 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
           </svg>
-          Subir y crear Run
+          @if (isFileMode()) {
+            Subir y crear Run
+          } @else {
+            Crear Init Run por {{ initMode() }}
+          }
         }
       </button>
 

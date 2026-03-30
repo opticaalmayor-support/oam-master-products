@@ -32,6 +32,7 @@ export class RunByZip implements OnInit, OnDestroy {
 
   suppliers = signal<OamSupplier[]>([]);
   selectedSupplierId = signal<number | null>(null);
+  initMode = signal<'file' | 'console'>('file');
   isDragOver = signal(false);
   selectedFile = signal<File | null>(null);
   selectedFiles = signal<File[]>([]);
@@ -51,10 +52,13 @@ export class RunByZip implements OnInit, OnDestroy {
 
   isZip = computed(() => this.selectedFile()?.name.endsWith('.zip') ?? false);
 
+  isFileMode = computed(() => this.initMode() === 'file');
+
   canUpload = computed(() => {
     const hasSupplier = this.selectedSupplierId() !== null;
     const hasFile = this.selectedFile() !== null || this.selectedFiles().length > 0;
-    return hasSupplier && hasFile && !this.isUploading();
+    const modeReady = this.isFileMode() ? hasFile : true;
+    return hasSupplier && modeReady && !this.isUploading();
   });
 
   ngOnInit() {
@@ -118,18 +122,21 @@ export class RunByZip implements OnInit, OnDestroy {
   }
 
   onDragOver(event: DragEvent) {
+    if (!this.isFileMode()) return;
     event.preventDefault();
     event.stopPropagation();
     this.isDragOver.set(true);
   }
 
   onDragLeave(event: DragEvent) {
+    if (!this.isFileMode()) return;
     event.preventDefault();
     event.stopPropagation();
     this.isDragOver.set(false);
   }
 
   onDrop(event: DragEvent) {
+    if (!this.isFileMode()) return;
     event.preventDefault();
     event.stopPropagation();
     this.isDragOver.set(false);
@@ -140,6 +147,7 @@ export class RunByZip implements OnInit, OnDestroy {
   }
 
   onFileSelected(event: Event) {
+    if (!this.isFileMode()) return;
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.handleFiles(Array.from(input.files));
@@ -193,7 +201,26 @@ export class RunByZip implements OnInit, OnDestroy {
   }
 
   triggerFileInput() {
+    if (!this.isFileMode()) return;
     this.fileInput()?.nativeElement.click();
+  }
+
+  setInitMode(mode: 'file' | 'console') {
+    this.initMode.set(mode);
+    this.isDragOver.set(false);
+    this.uploadError.set(null);
+    this.uploadSuccess.set(false);
+    if (mode !== 'file') this.clearFile();
+  }
+
+  getSelectedSupplierConsoleRunName(): string {
+    const settings = this.selectedSupplier()?.settings as Record<string, any> | undefined;
+    return String(settings?.['console_run_name'] ?? settings?.['console']?.['run_name'] ?? '').trim();
+  }
+
+  getSelectedSupplierConsoleCommand(): string {
+    const settings = this.selectedSupplier()?.settings as Record<string, any> | undefined;
+    return String(settings?.['console_command'] ?? settings?.['console']?.['command'] ?? '').trim();
   }
 
   upload() {
@@ -206,12 +233,28 @@ export class RunByZip implements OnInit, OnDestroy {
 
     const formData = new FormData();
     formData.append('supplier_id', String(supplierId));
+    formData.append('init_mode', this.initMode());
 
-    const zipFile = this.selectedFile();
-    if (zipFile) {
-      formData.append('file', zipFile);
+    if (this.initMode() === 'file') {
+      const zipFile = this.selectedFile();
+      if (zipFile) {
+        formData.append('file', zipFile);
+      } else {
+        this.selectedFiles().forEach(f => formData.append('files[]', f));
+      }
     } else {
-      this.selectedFiles().forEach(f => formData.append('files[]', f));
+      formData.append('source_type', this.initMode());
+
+      const configuredRunName = this.getSelectedSupplierConsoleRunName();
+      const configuredCommand = this.getSelectedSupplierConsoleCommand();
+
+      if (configuredRunName) {
+        formData.append('console_run_name', configuredRunName);
+      }
+
+      if (configuredCommand) {
+        formData.append('console_command', configuredCommand);
+      }
     }
 
     this.http.post<OamSupplierCatalogRun>(this.uploadUrl, formData).subscribe({
@@ -219,7 +262,7 @@ export class RunByZip implements OnInit, OnDestroy {
         this.isUploading.set(false);
         this.uploadSuccess.set(true);
         this.loadRecentRuns();
-        this.clearFile();
+        if (this.isFileMode()) this.clearFile();
       },
       error: (err) => {
         this.isUploading.set(false);

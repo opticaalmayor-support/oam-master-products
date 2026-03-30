@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 interface MenuItem {
   label: string;
@@ -17,6 +17,8 @@ interface MenuItem {
   styleUrl: './sidebar.scss',
 })
 export class Sidebar {
+  constructor(private readonly router: Router) {}
+
   // Genera un id valido para los dropdowns del sidebar.
   getDropdownId(label: string): string {
     // Convierte el label a minusculas para consistencia visual y tecnica.
@@ -25,6 +27,40 @@ export class Sidebar {
     const sanitizedId = baseId.replace(/[^a-z0-9]+/g, '-');
     // Elimina guiones sobrantes al inicio/fin para evitar selectores raros.
     return sanitizedId.replace(/(^-|-$)/g, '');
+  }
+
+  private readonly openDropdowns = new Set<string>();
+
+  toggleDropdown(item: MenuItem): void {
+    const dropdownId = this.getDropdownId(item.label);
+    if (this.openDropdowns.has(dropdownId)) {
+      this.openDropdowns.delete(dropdownId);
+      return;
+    }
+
+    this.openDropdowns.add(dropdownId);
+  }
+
+  isDropdownOpen(item: MenuItem): boolean {
+    const dropdownId = this.getDropdownId(item.label);
+    return this.openDropdowns.has(dropdownId) || this.isItemActive(item);
+  }
+
+  isItemActive(item: MenuItem): boolean {
+    if (item.path) {
+      return this.isPathActive(item.path);
+    }
+
+    return item.children?.some((child) => this.isPathActive(child.path)) ?? false;
+  }
+
+  private isPathActive(path?: string): boolean {
+    if (!path) {
+      return false;
+    }
+
+    const currentPath = this.router.url.split('?')[0].split('#')[0];
+    return currentPath === path || currentPath.startsWith(`${path}/`);
   }
 
   menuItems: MenuItem[] = [
@@ -39,7 +75,6 @@ export class Sidebar {
       children: [
         { label: 'All Runs', path: '/runs', icon: '' },
         { label: 'Upload Catalog', path: '/runs/upload', icon: '' },
-        { label: 'NYWD Catalog', path: '/nywd', icon: '' },
       ],
     },
     {
