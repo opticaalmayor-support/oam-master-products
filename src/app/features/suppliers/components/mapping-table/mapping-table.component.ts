@@ -187,7 +187,13 @@ interface AttributeRow {
           </thead>
           <tbody>
             @for (normalizedField of normalizedFields; track normalizedField) {
-              <tr class="border-t border-gray-100 dark:border-gray-700">
+              <tr
+                [class]="
+                  'border-t dark:border-gray-700 ' +
+                  (isNormalizationMissing(normalizedField)
+                    ? 'border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-900/20'
+                    : 'border-gray-100')
+                ">
                 <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ normalizedField }}</td>
                 <td class="px-3 py-2">
                   <input
@@ -195,12 +201,20 @@ interface AttributeRow {
                     (ngModelChange)="updateNormalizationMapping(normalizedField, $event)"
                     [attr.list]="'raw-source-options-' + normalizedField"
                     placeholder="supplier_sku"
-                    class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                    [class]="
+                      'block w-full rounded-lg border px-3 py-2 text-xs dark:text-white ' +
+                      (isNormalizationMissing(normalizedField)
+                        ? 'border-amber-400 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20'
+                        : 'border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-700')
+                    " />
                   <datalist [id]="'raw-source-options-' + normalizedField">
                     @for (field of normalizationSourceOptions(); track field) {
                       <option [value]="field"></option>
                     }
                   </datalist>
+                  @if (isNormalizationMissing(normalizedField)) {
+                    <p class="mt-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">Falta asignar source field.</p>
+                  }
                 </td>
                 <td class="px-3 py-2">
                   <button
@@ -356,6 +370,10 @@ export class MappingTableComponent implements OnChanges {
     });
 
     this.normalizationMappingChange.emit(this.normalizationMap());
+  }
+
+  isNormalizationMissing(normalizedField: string): boolean {
+    return !this.mappedNormalizationSource(normalizedField).trim();
   }
 
   addAttributeRow(): void {
