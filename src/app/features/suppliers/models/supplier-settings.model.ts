@@ -57,6 +57,7 @@ export interface SupplierApiSettings {
   endpoints: Record<string, SupplierApiEndpoint>;
   mapping: Record<string, string>;
   attributes_mapping?: Record<string, string>;
+  normalization_mapping?: Record<string, string>;
 }
 
 export type SupplierScheduleDay =
@@ -103,6 +104,8 @@ export interface SupplierSettingsSchema {
   methods?: HttpMethod[];
   mapping?: {
     local_raw_fields?: string[];
+    local_normalized_fields?: string[];
+    normalization_source_fields?: string[];
   };
 }
 
@@ -120,6 +123,7 @@ export interface SupplierSettingsPatchPayload {
       endpoints: Record<string, SupplierApiEndpoint>;
       mapping: Record<string, string>;
       attributes_mapping?: Record<string, string>;
+      normalization_mapping?: Record<string, string>;
     };
     schedule: {
       enabled: boolean;

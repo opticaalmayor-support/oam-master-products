@@ -259,12 +259,16 @@
         } @else if (activeTab() === 'mapping') {
           <app-mapping-table
             [localFields]="localRawFields()"
+            [normalizedFields]="localNormalizedFields()"
+            [normalizationSourceFields]="normalizationSourceFields()"
             [mapping]="store.draft().api.mapping"
             [attributesMapping]="store.draft().api.attributes_mapping || {}"
+            [normalizationMapping]="store.draft().api.normalization_mapping || {}"
             [mappingDocBody]="store.draft().api.mapping_doc_body || ''"
             (mappingDocBodyChange)="setMappingDocBody($event)"
             (mappingChange)="setMapping($event)"
-            (attributesMappingChange)="setAttributesMapping($event)" />
+            (attributesMappingChange)="setAttributesMapping($event)"
+            (normalizationMappingChange)="setNormalizationMapping($event)" />
         } @else {
           <section class="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div class="flex items-center justify-between">

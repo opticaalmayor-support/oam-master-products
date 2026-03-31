@@ -38,7 +38,7 @@ export class SupplierSettingsStore {
   readonly fieldErrors = signal<SupplierSettingsFieldErrors>({});
   readonly schema = signal<SupplierSettingsSchema>({
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    mapping: { local_raw_fields: [] },
+    mapping: { local_raw_fields: [], local_normalized_fields: [], normalization_source_fields: [] },
   });
   readonly settings = signal<SupplierSettings>(this.defaultSettings());
   readonly draft = signal<SupplierSettings>(this.defaultSettings());
@@ -144,6 +144,16 @@ export class SupplierSettingsStore {
       api: {
         ...draft.api,
         attributes_mapping: attributesMapping,
+      },
+    }));
+  }
+
+  setNormalizationMapping(normalizationMapping: Record<string, string>): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      api: {
+        ...draft.api,
+        normalization_mapping: normalizationMapping,
       },
     }));
   }
@@ -292,10 +302,24 @@ export class SupplierSettingsStore {
 
     this.api.patchSettings(supplierId, payload).subscribe({
       next: (saved) => {
-        this.settings.set(saved);
-        this.draft.set(this.cloneSettings(saved));
-        this.toast.set({ type: 'success', message: 'Settings guardados correctamente.' });
-        this.saving.set(false);
+        forkJoin({
+          settings: this.api.getSettings(supplierId),
+          schema: this.api.getSchema(supplierId),
+        }).subscribe({
+          next: ({ settings, schema }) => {
+            this.settings.set(settings);
+            this.draft.set(this.cloneSettings(settings));
+            this.schema.set(schema);
+            this.toast.set({ type: 'success', message: 'Settings guardados correctamente.' });
+            this.saving.set(false);
+          },
+          error: () => {
+            this.settings.set(saved);
+            this.draft.set(this.cloneSettings(saved));
+            this.toast.set({ type: 'success', message: 'Settings guardados correctamente.' });
+            this.saving.set(false);
+          },
+        });
       },
       error: (err) => {
         this.errorMessage.set(err?.error?.message ?? 'No se pudieron guardar los settings.');
@@ -340,6 +364,7 @@ export class SupplierSettingsStore {
           endpoints: source.api.endpoints,
           mapping: source.api.mapping,
           attributes_mapping: source.api.attributes_mapping ?? {},
+          normalization_mapping: source.api.normalization_mapping ?? {},
         },
         schedule: this.normalizeScheduleForPayload(source.schedule),
       },
@@ -409,6 +434,7 @@ export class SupplierSettingsStore {
         ),
         mapping: { ...source.api.mapping },
         attributes_mapping: { ...(source.api.attributes_mapping ?? {}) },
+        normalization_mapping: { ...(source.api.normalization_mapping ?? {}) },
       },
       schedule: {
         ...source.schedule,
@@ -452,6 +478,7 @@ export class SupplierSettingsStore {
         endpoints: {},
         mapping: {},
         attributes_mapping: {},
+        normalization_mapping: {},
       },
       schedule: {
         enabled: false,

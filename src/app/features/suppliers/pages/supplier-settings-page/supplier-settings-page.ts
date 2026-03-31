@@ -97,6 +97,8 @@ export class SupplierSettingsPage implements OnInit {
   ] as const;
 
   readonly localRawFields = computed(() => this.store.schema().mapping?.local_raw_fields ?? []);
+  readonly localNormalizedFields = computed(() => this.store.schema().mapping?.local_normalized_fields ?? []);
+  readonly normalizationSourceFields = computed(() => this.store.schema().mapping?.normalization_source_fields ?? []);
   readonly schedule = computed(() => this.store.draft().schedule);
   readonly availableScheduleDays = computed(() => {
     const selected = new Set(this.schedule().windows.map((window) => window.day));
@@ -211,6 +213,10 @@ export class SupplierSettingsPage implements OnInit {
 
   setAttributesMapping(attributesMapping: Record<string, string>): void {
     this.store.setAttributesMapping(attributesMapping);
+  }
+
+  setNormalizationMapping(normalizationMapping: Record<string, string>): void {
+    this.store.setNormalizationMapping(normalizationMapping);
   }
 
   setMappingDocBody(value: string): void {

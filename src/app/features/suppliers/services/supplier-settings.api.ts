@@ -92,6 +92,10 @@ export class SupplierSettingsApi {
       api['attributes_mapping'] && typeof api['attributes_mapping'] === 'object'
         ? (api['attributes_mapping'] as Record<string, unknown>)
         : {};
+    const normalizationMappingRaw =
+      api['normalization_mapping'] && typeof api['normalization_mapping'] === 'object'
+        ? (api['normalization_mapping'] as Record<string, unknown>)
+        : {};
 
     const endpoints: Record<string, SupplierApiEndpoint> = {};
     Object.entries(endpointsRaw).forEach(([key, value]) => {
@@ -109,6 +113,12 @@ export class SupplierSettingsApi {
     Object.entries(attributesMappingRaw).forEach(([key, value]) => {
       if (!key.trim()) return;
       attributesMapping[key] = String(value ?? '');
+    });
+
+    const normalizationMapping: Record<string, string> = {};
+    Object.entries(normalizationMappingRaw).forEach(([key, value]) => {
+      if (!key.trim()) return;
+      normalizationMapping[key] = String(value ?? '');
     });
 
     return {
@@ -140,6 +150,7 @@ export class SupplierSettingsApi {
         endpoints,
         mapping,
         attributes_mapping: attributesMapping,
+        normalization_mapping: normalizationMapping,
       },
       schedule: this.normalizeSchedule(schedule),
     };
@@ -155,6 +166,12 @@ export class SupplierSettingsApi {
 
     const localRawFields = Array.isArray(mapping['local_raw_fields'])
       ? mapping['local_raw_fields'].map((field) => String(field)).filter((field) => field.trim().length > 0)
+      : [];
+    const localNormalizedFields = Array.isArray(mapping['local_normalized_fields'])
+      ? mapping['local_normalized_fields'].map((field) => String(field)).filter((field) => field.trim().length > 0)
+      : [];
+    const normalizationSourceFields = Array.isArray(mapping['normalization_source_fields'])
+      ? mapping['normalization_source_fields'].map((field) => String(field)).filter((field) => field.trim().length > 0)
       : [];
 
     const methods = Array.isArray(source['methods'])
@@ -172,6 +189,8 @@ export class SupplierSettingsApi {
       methods,
       mapping: {
         local_raw_fields: localRawFields,
+        local_normalized_fields: localNormalizedFields,
+        normalization_source_fields: normalizationSourceFields,
       },
     };
   }

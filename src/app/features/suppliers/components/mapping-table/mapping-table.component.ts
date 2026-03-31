@@ -25,82 +25,179 @@ interface AttributeRow {
         </div>
       </div>
 
-      <div class="mb-4">
-        <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Body base (documentacion API)</label>
-        <textarea
-          [ngModel]="docBody()"
-          (ngModelChange)="onDocBodyChange($event)"
-          rows="10"
-          class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-mono text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-          placeholder='{"Sku": integer, "Name": "string" | null, ...}'></textarea>
-        @if (parseError()) {
-          <p class="mt-2 text-xs text-red-600 dark:text-red-300">{{ parseError() }}</p>
-        }
-      </div>
+      <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3 dark:border-emerald-900/50 dark:bg-emerald-900/10">
+        <div class="mb-3">
+          <h4 class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">API -> Raw mapping</h4>
+          <p class="mt-1 text-[11px] text-emerald-700/80 dark:text-emerald-300/80">Mapea campos del payload externo hacia el modelo raw.</p>
+        </div>
 
-      <div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/30">
-        <p class="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">Campos detectados del API externo</p>
-        @if (sourceFields().length === 0) {
-          <p class="text-xs text-gray-500 dark:text-gray-400">No hay campos detectados aun. Usa "Consultar mapping".</p>
-        } @else {
-          <div class="flex flex-wrap gap-1.5">
-            @for (field of sourceFields(); track field) {
-              <button
-                type="button"
-                (click)="addDetectedFieldToAttributes(field)"
-                [class]="
-                  'rounded px-2 py-0.5 text-[11px] transition-colors ' +
-                  (isUsedInAttributes(field)
-                    ? 'bg-violet-100 text-violet-800 ring-1 ring-violet-300 dark:bg-violet-900/40 dark:text-violet-200 dark:ring-violet-700'
-                    : isUsedInRawMapping(field)
-                      ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-200 dark:ring-emerald-700'
-                      : 'bg-white text-gray-700 hover:bg-blue-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700')
-                ">
-                {{ field }}
-                @if (getSourceUseCount(field) > 0) {
-                  <span
-                    [class]="
-                      'ml-1 rounded px-1 text-[10px] ' +
-                      (isUsedInAttributes(field)
-                        ? 'bg-violet-200 text-violet-900 dark:bg-violet-800 dark:text-violet-100'
-                        : 'bg-emerald-200 text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100')
-                    ">
-                    x{{ getSourceUseCount(field) }}
-                  </span>
-                }
-              </button>
+        <div class="mb-4">
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Body base (documentacion API)</label>
+          <textarea
+            [ngModel]="docBody()"
+            (ngModelChange)="onDocBodyChange($event)"
+            rows="10"
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-mono text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            placeholder='{"Sku": integer, "Name": "string" | null, ...}'></textarea>
+          @if (parseError()) {
+            <p class="mt-2 text-xs text-red-600 dark:text-red-300">{{ parseError() }}</p>
+          }
+        </div>
+
+        <div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/30">
+          <p class="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">Campos detectados del API externo</p>
+          @if (sourceFields().length === 0) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">No hay campos detectados aun. Usa "Consultar mapping".</p>
+          } @else {
+            <div class="flex flex-wrap gap-1.5">
+              @for (field of sourceFields(); track field) {
+                <button
+                  type="button"
+                  (click)="addDetectedFieldToAttributes(field)"
+                  [class]="
+                    'rounded px-2 py-0.5 text-[11px] transition-colors ' +
+                    (isUsedInAttributes(field)
+                      ? 'bg-violet-100 text-violet-800 ring-1 ring-violet-300 dark:bg-violet-900/40 dark:text-violet-200 dark:ring-violet-700'
+                      : isUsedInRawMapping(field)
+                        ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-200 dark:ring-emerald-700'
+                        : 'bg-white text-gray-700 hover:bg-blue-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700')
+                  ">
+                  {{ field }}
+                  @if (getSourceUseCount(field) > 0) {
+                    <span
+                      [class]="
+                        'ml-1 rounded px-1 text-[10px] ' +
+                        (isUsedInAttributes(field)
+                          ? 'bg-violet-200 text-violet-900 dark:bg-violet-800 dark:text-violet-100'
+                          : 'bg-emerald-200 text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100')
+                      ">
+                      x{{ getSourceUseCount(field) }}
+                    </span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="overflow-x-auto">
+          @if (rawLocalFields().length === 0) {
+            <p class="mb-2 text-xs text-amber-700 dark:text-amber-300">
+              No hay campos locales raw configurables. El campo attributes se configura en la seccion de abajo.
+            </p>
+          }
+          <table class="w-full text-left text-xs text-gray-600 dark:text-gray-300">
+            <thead class="bg-gray-50 uppercase text-gray-500 dark:bg-gray-700/50">
+              <tr>
+                <th class="px-3 py-2">Campo local (raw)</th>
+                <th class="px-3 py-2">Campo API externo</th>
+                <th class="px-3 py-2">Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (localField of rawLocalFields(); track localField) {
+                <tr class="border-t border-gray-100 dark:border-gray-700">
+                  <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ localField }}</td>
+                  <td class="px-3 py-2">
+                    <input
+                      [ngModel]="mappedSource(localField)"
+                      (ngModelChange)="updateMapping(localField, $event)"
+                      [attr.list]="'source-options-' + localField"
+                      placeholder="Selecciona o escribe path"
+                      class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                    <datalist [id]="'source-options-' + localField">
+                      @for (field of sourceFields(); track field) {
+                        <option [value]="field"></option>
+                      }
+                    </datalist>
+                  </td>
+                  <td class="px-3 py-2">
+                    <button
+                      type="button"
+                      (click)="clearMapping(localField)"
+                      class="rounded border border-red-300 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30">
+                      Clear
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/30">
+          <div class="mb-2 flex items-center justify-between">
+            <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Campos extras a attributes</h4>
+            <button type="button" (click)="addAttributeRow()" class="rounded border border-violet-300 px-2 py-1 text-[11px] font-medium text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/30">
+              Add attribute
+            </button>
+          </div>
+          <p class="mb-2 text-[11px] text-gray-500 dark:text-gray-400">
+            raw.attributes es un solo campo JSON, pero aqui puedes agregar multiples llaves (key -> source) y todas se guardan dentro de attributes.
+          </p>
+
+          @if (attributeRows().length === 0) {
+            <p class="text-xs text-gray-500 dark:text-gray-400">No hay campos en attributes.</p>
+          }
+
+          <div class="space-y-2">
+            @for (row of attributeRows(); track $index) {
+              <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_auto]">
+                <input
+                  [ngModel]="row.key"
+                  (ngModelChange)="updateAttributeKey($index, $event)"
+                  placeholder="MapPrice"
+                  class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
+                <input
+                  [ngModel]="row.source"
+                  (ngModelChange)="updateAttributeSource($index, $event)"
+                  [attr.list]="'attributes-source-options-' + $index"
+                  placeholder="$.MapPrice"
+                  class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
+                <datalist [id]="'attributes-source-options-' + $index">
+                  @for (field of sourceFields(); track field) {
+                    <option [value]="field"></option>
+                  }
+                </datalist>
+                <button type="button" (click)="removeAttributeRow($index)" class="rounded border border-red-300 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30">Remove</button>
+              </div>
             }
           </div>
-        }
+        </div>
       </div>
 
+      <div class="mt-5 rounded-lg border border-violet-200 bg-violet-50/40 p-3 dark:border-violet-900/50 dark:bg-violet-900/10">
+        <div class="mb-3">
+          <h4 class="text-xs font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">Raw -> Normalized mapping</h4>
+          <p class="mt-1 text-[11px] text-violet-700/80 dark:text-violet-300/80">Mapea campos del modelo raw hacia el modelo normalized.</p>
+        </div>
       <div class="overflow-x-auto">
-        @if (rawLocalFields().length === 0) {
+        @if (normalizedFields.length === 0) {
           <p class="mb-2 text-xs text-amber-700 dark:text-amber-300">
-            No hay campos locales raw configurables. El campo attributes se configura en la seccion de abajo.
+            El backend no envio schema.mapping.local_normalized_fields. No se puede renderizar el mapeo raw -> normalized.
           </p>
         }
         <table class="w-full text-left text-xs text-gray-600 dark:text-gray-300">
           <thead class="bg-gray-50 uppercase text-gray-500 dark:bg-gray-700/50">
             <tr>
-              <th class="px-3 py-2">Campo local (raw)</th>
-              <th class="px-3 py-2">Campo API externo</th>
+              <th class="px-3 py-2">Campo local (normalized)</th>
+              <th class="px-3 py-2">Source desde raw</th>
               <th class="px-3 py-2">Accion</th>
             </tr>
           </thead>
           <tbody>
-            @for (localField of rawLocalFields(); track localField) {
+            @for (normalizedField of normalizedFields; track normalizedField) {
               <tr class="border-t border-gray-100 dark:border-gray-700">
-                <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ localField }}</td>
+                <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ normalizedField }}</td>
                 <td class="px-3 py-2">
                   <input
-                    [ngModel]="mappedSource(localField)"
-                    (ngModelChange)="updateMapping(localField, $event)"
-                    [attr.list]="'source-options-' + localField"
-                    placeholder="Selecciona o escribe path"
+                    [ngModel]="mappedNormalizationSource(normalizedField)"
+                    (ngModelChange)="updateNormalizationMapping(normalizedField, $event)"
+                    [attr.list]="'raw-source-options-' + normalizedField"
+                    placeholder="supplier_sku"
                     class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                  <datalist [id]="'source-options-' + localField">
-                    @for (field of sourceFields(); track field) {
+                  <datalist [id]="'raw-source-options-' + normalizedField">
+                    @for (field of normalizationSourceOptions(); track field) {
                       <option [value]="field"></option>
                     }
                   </datalist>
@@ -108,7 +205,7 @@ interface AttributeRow {
                 <td class="px-3 py-2">
                   <button
                     type="button"
-                    (click)="clearMapping(localField)"
+                    (click)="clearNormalizationMapping(normalizedField)"
                     class="rounded border border-red-300 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30">
                     Clear
                   </button>
@@ -118,45 +215,6 @@ interface AttributeRow {
           </tbody>
         </table>
       </div>
-
-      <div class="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/30">
-        <div class="mb-2 flex items-center justify-between">
-          <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Campos extras a attributes</h4>
-          <button type="button" (click)="addAttributeRow()" class="rounded border border-violet-300 px-2 py-1 text-[11px] font-medium text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-900/30">
-            Add attribute
-          </button>
-        </div>
-        <p class="mb-2 text-[11px] text-gray-500 dark:text-gray-400">
-          raw.attributes es un solo campo JSON, pero aqui puedes agregar multiples llaves (key -> source) y todas se guardan dentro de attributes.
-        </p>
-
-        @if (attributeRows().length === 0) {
-          <p class="text-xs text-gray-500 dark:text-gray-400">No hay campos en attributes.</p>
-        }
-
-        <div class="space-y-2">
-          @for (row of attributeRows(); track $index) {
-            <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_auto]">
-              <input
-                [ngModel]="row.key"
-                (ngModelChange)="updateAttributeKey($index, $event)"
-                placeholder="MapPrice"
-                class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
-              <input
-                [ngModel]="row.source"
-                (ngModelChange)="updateAttributeSource($index, $event)"
-                [attr.list]="'attributes-source-options-' + $index"
-                placeholder="$.MapPrice"
-                class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
-              <datalist [id]="'attributes-source-options-' + $index">
-                @for (field of sourceFields(); track field) {
-                  <option [value]="field"></option>
-                }
-              </datalist>
-              <button type="button" (click)="removeAttributeRow($index)" class="rounded border border-red-300 px-2 py-1 text-[11px] font-medium text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30">Remove</button>
-            </div>
-          }
-        </div>
       </div>
     </section>
   `,
@@ -164,15 +222,20 @@ interface AttributeRow {
 export class MappingTableComponent implements OnChanges {
   @Input() mapping: Record<string, string> = {};
   @Input() attributesMapping: Record<string, string> = {};
+  @Input() normalizationMapping: Record<string, string> = {};
   @Input() mappingDocBody = '';
   @Input() localFields: string[] = [];
+  @Input() normalizedFields: string[] = [];
+  @Input() normalizationSourceFields: string[] = [];
 
   @Output() mappingChange = new EventEmitter<Record<string, string>>();
   @Output() attributesMappingChange = new EventEmitter<Record<string, string>>();
+  @Output() normalizationMappingChange = new EventEmitter<Record<string, string>>();
   @Output() mappingDocBodyChange = new EventEmitter<string>();
 
   readonly map = signal<Record<string, string>>({});
   readonly attributesMap = signal<Record<string, string>>({});
+  readonly normalizationMap = signal<Record<string, string>>({});
   readonly attributeRows = signal<AttributeRow[]>([]);
   readonly docBody = signal('');
   readonly sourceFields = signal<string[]>([]);
@@ -181,6 +244,7 @@ export class MappingTableComponent implements OnChanges {
   ngOnChanges(): void {
     this.map.set({ ...this.mapping });
     this.attributesMap.set({ ...this.attributesMapping });
+    this.normalizationMap.set({ ...this.normalizationMapping });
     this.attributeRows.set(
       Object.entries(this.attributesMapping).map(([key, source]) => ({ key, source })),
     );
@@ -220,6 +284,9 @@ export class MappingTableComponent implements OnChanges {
     this.attributeRows.set([]);
     this.attributesMappingChange.emit({});
 
+    this.normalizationMap.set({});
+    this.normalizationMappingChange.emit({});
+
     this.docBody.set('');
     this.mappingDocBodyChange.emit('');
 
@@ -257,6 +324,38 @@ export class MappingTableComponent implements OnChanges {
     });
 
     this.mappingChange.emit(this.map());
+  }
+
+  mappedNormalizationSource(normalizedField: string): string {
+    return this.normalizationMap()[normalizedField] ?? '';
+  }
+
+  updateNormalizationMapping(normalizedField: string, sourceField: string): void {
+    const trimmed = sourceField.trim();
+
+    this.normalizationMap.update((current) => {
+      const next = { ...current };
+
+      if (!trimmed) {
+        delete next[normalizedField];
+      } else {
+        next[normalizedField] = trimmed;
+      }
+
+      return next;
+    });
+
+    this.normalizationMappingChange.emit(this.normalizationMap());
+  }
+
+  clearNormalizationMapping(normalizedField: string): void {
+    this.normalizationMap.update((current) => {
+      const next = { ...current };
+      delete next[normalizedField];
+      return next;
+    });
+
+    this.normalizationMappingChange.emit(this.normalizationMap());
   }
 
   addAttributeRow(): void {
@@ -316,7 +415,23 @@ export class MappingTableComponent implements OnChanges {
   }
 
   rawLocalFields(): string[] {
-    return this.localFields.filter((field) => field.trim().toLowerCase() !== 'attributes');
+    return this.localFields.filter((field) => !this.isAttributesField(field));
+  }
+
+  normalizationSourceOptions(): string[] {
+    if (this.normalizationSourceFields.length > 0) {
+      return this.normalizationSourceFields;
+    }
+
+    return this.localFields.filter((field) => field.trim().length > 0);
+  }
+
+  private isAttributesField(field: string): boolean {
+    const normalized = field.trim().toLowerCase();
+    if (!normalized) return false;
+
+    const segments = normalized.split('.').filter(Boolean);
+    return segments.includes('attributes');
   }
 
   private emitAttributesMap(): void {

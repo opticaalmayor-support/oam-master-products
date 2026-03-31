@@ -8,13 +8,22 @@ import { RunKpisComponent } from '../components/run-kpis.component';
 import { RawProductsPagination, RawProduct } from '../models/raw-product.model';
 import { CatalogRun } from '../models/run.model';
 import { RunsApi } from '../services/runs.api';
+import { RunNormalizedTableComponent } from '../../../runs/components/run-normalized-table/run-normalized-table.component';
 
 type DetailAction = 'start' | 'normalize';
+type DetailTab = 'raw' | 'normalized';
 
 @Component({
   selector: 'app-run-detail-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, RunHeaderComponent, RunKpisComponent, RawProductsTableComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    RunHeaderComponent,
+    RunKpisComponent,
+    RawProductsTableComponent,
+    RunNormalizedTableComponent,
+  ],
   templateUrl: './run-detail.page.html',
 })
 export class RunDetailPage implements OnInit, OnDestroy {
@@ -42,6 +51,7 @@ export class RunDetailPage implements OnInit, OnDestroy {
     total: 0,
   });
   readonly search = signal('');
+  readonly activeTab = signal<DetailTab>('raw');
 
   private runId = 0;
   private autoRefreshIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -105,8 +115,8 @@ export class RunDetailPage implements OnInit, OnDestroy {
           'success',
           action === 'start' ? 'Run iniciado correctamente.' : 'Run normalizado correctamente.',
         );
-        this.closeAction();
         this.isSubmitting.set(false);
+        this.closeAction();
         this.loadProductsOnly();
       },
       error: (err) => {
@@ -138,6 +148,10 @@ export class RunDetailPage implements OnInit, OnDestroy {
 
   goBack(): void {
     void this.router.navigate(['/runs']);
+  }
+
+  setTab(tab: DetailTab): void {
+    this.activeTab.set(tab);
   }
 
   private loadRunAndProductsInParallel(): void {
