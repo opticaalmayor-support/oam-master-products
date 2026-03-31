@@ -61,6 +61,7 @@ interface KeyValueRow {
                 <option ngValue="login">Login</option>
                 <option ngValue="refresh">Refresh</option>
                 <option ngValue="run">Run</option>
+                <option ngValue="testing">Testing</option>
                 <option ngValue="mapping">Mapping</option>
                 <option ngValue="get">Get</option>
                 <option ngValue="list">List</option>
@@ -71,13 +72,42 @@ interface KeyValueRow {
               </select>
             </div>
             <div>
+              <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Priority</label>
+              <input
+                type="number"
+                min="0"
+                [ngModel]="draftPriority()"
+                (ngModelChange)="setDraftPriority($event)"
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                placeholder="100" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Variant</label>
+              <input
+                type="text"
+                [ngModel]="draftVariant()"
+                (ngModelChange)="draftVariant.set($event)"
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                placeholder="full, delta, stock_only" />
+            </div>
+            <div class="flex items-center pt-5">
+              <label class="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <input
+                  type="checkbox"
+                  [ngModel]="draftEnabled()"
+                  (ngModelChange)="draftEnabled.set($event === true)"
+                  class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700" />
+                Enabled
+              </label>
+            </div>
+            <div>
               <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">response_items_path</label>
               <input
                 type="text"
                 [ngModel]="draftItemsPath()"
                 (ngModelChange)="draftItemsPath.set($event)"
                 class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                placeholder="$.data.items" />
+                placeholder="Products" />
             </div>
             <div>
               <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">response_item_path</label>
@@ -86,11 +116,20 @@ interface KeyValueRow {
                 [ngModel]="draftItemPath()"
                 (ngModelChange)="draftItemPath.set($event)"
                 class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                placeholder="$.data" />
+                placeholder="Product" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">response_total_path</label>
+              <input
+                type="text"
+                [ngModel]="draftTotalPath()"
+                (ngModelChange)="draftTotalPath.set($event)"
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                placeholder="TotalResults" />
             </div>
           </div>
 
-          <div class="grid grid-cols-1 gap-4 px-4 pb-4 md:grid-cols-2">
+          <div class="space-y-4 px-4 pb-4">
             <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
               <div class="mb-2 flex items-center justify-between">
                 <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">query_map</h4>
@@ -98,10 +137,10 @@ interface KeyValueRow {
               </div>
               <div class="space-y-2">
                 @for (row of queryRows(); track $index) {
-                  <div class="grid grid-cols-[1fr_1fr_auto] gap-2">
+                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
                     <input type="text" [ngModel]="row.key" (ngModelChange)="updateQueryKey($index, $event)" placeholder="param" class="rounded border border-gray-300 bg-gray-50 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                     <input type="text" [ngModel]="row.value" (ngModelChange)="updateQueryValue($index, $event)" placeholder="$.Path" class="rounded border border-gray-300 bg-gray-50 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                    <button type="button" (click)="removeQueryRow($index)" class="rounded border border-red-300 px-2 text-xs text-red-600">x</button>
+                    <button type="button" (click)="removeQueryRow($index)" class="rounded border border-red-300 px-2 py-1 text-[11px] font-medium text-red-600 hover:bg-red-50 sm:w-auto">Remove</button>
                   </div>
                 }
               </div>
@@ -114,10 +153,10 @@ interface KeyValueRow {
               </div>
               <div class="space-y-2">
                 @for (row of headerRows(); track $index) {
-                  <div class="grid grid-cols-[1fr_1fr_auto] gap-2">
+                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
                     <input type="text" [ngModel]="row.key" (ngModelChange)="updateHeaderKey($index, $event)" placeholder="Header-Name" class="rounded border border-gray-300 bg-gray-50 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
                     <input type="text" [ngModel]="row.value" (ngModelChange)="updateHeaderValue($index, $event)" placeholder="value" class="rounded border border-gray-300 bg-gray-50 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
-                    <button type="button" (click)="removeHeaderRow($index)" class="rounded border border-red-300 px-2 text-xs text-red-600">x</button>
+                    <button type="button" (click)="removeHeaderRow($index)" class="rounded border border-red-300 px-2 py-1 text-[11px] font-medium text-red-600 hover:bg-red-50 sm:w-auto">Remove</button>
                   </div>
                 }
               </div>
@@ -147,8 +186,12 @@ export class EndpointEditorModalComponent implements OnChanges {
   readonly draftMethod = signal<HttpMethod>('GET');
   readonly draftPath = signal('');
   readonly draftPurpose = signal<EndpointPurpose>('none');
+  readonly draftPriority = signal(100);
+  readonly draftVariant = signal('');
+  readonly draftEnabled = signal(true);
   readonly draftItemsPath = signal('');
   readonly draftItemPath = signal('');
+  readonly draftTotalPath = signal('');
   readonly queryRows = signal<KeyValueRow[]>([]);
   readonly headerRows = signal<KeyValueRow[]>([]);
 
@@ -158,10 +201,18 @@ export class EndpointEditorModalComponent implements OnChanges {
     this.draftMethod.set(endpoint?.method ?? 'GET');
     this.draftPath.set(endpoint?.path ?? '');
     this.draftPurpose.set(endpoint?.purpose ?? 'none');
+    this.draftPriority.set(this.normalizePriority(endpoint?.priority));
+    this.draftVariant.set(endpoint?.variant ?? '');
+    this.draftEnabled.set(endpoint?.enabled ?? true);
     this.draftItemsPath.set(endpoint?.response_items_path ?? '');
     this.draftItemPath.set(endpoint?.response_item_path ?? '');
+    this.draftTotalPath.set(endpoint?.response_total_path ?? '');
     this.queryRows.set(this.toRows(endpoint?.query_map ?? {}));
     this.headerRows.set(this.toRows(endpoint?.headers ?? {}));
+  }
+
+  setDraftPriority(value: string | number | null | undefined): void {
+    this.draftPriority.set(this.normalizePriority(value));
   }
 
   addQueryRow(): void {
@@ -202,10 +253,14 @@ export class EndpointEditorModalComponent implements OnChanges {
       method: this.draftMethod(),
       path: this.draftPath().trim(),
       purpose: this.draftPurpose(),
+      priority: this.normalizePriority(this.draftPriority()),
+      variant: this.draftVariant().trim() || null,
+      enabled: this.draftEnabled(),
       query_map: this.toMap(this.queryRows()),
       headers: this.toMap(this.headerRows()),
       response_items_path: this.draftItemsPath().trim() || null,
       response_item_path: this.draftItemPath().trim() || null,
+      response_total_path: this.draftTotalPath().trim() || null,
     };
 
     this.save.emit({ key, endpoint });
@@ -222,5 +277,11 @@ export class EndpointEditorModalComponent implements OnChanges {
       acc[key] = row.value;
       return acc;
     }, {});
+  }
+
+  private normalizePriority(value: unknown): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) return 100;
+    return Math.floor(parsed);
   }
 }

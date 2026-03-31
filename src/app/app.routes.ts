@@ -43,6 +43,14 @@ export const routes: Routes = [
           import('./features/runs/components/run-by-zip/run-by-zip').then((m) => m.RunByZip),
       },
       {
+        path: 'runs/api-tester',
+        title: 'API Run Tester | OAM Master',
+        loadComponent: () =>
+          import('./features/runs/pages/supplier-api-run-tester/supplier-api-run-tester.component').then(
+            (m) => m.SupplierApiRunTesterComponent,
+          ),
+      },
+      {
         path: 'runs/:runId',
         title: 'Run Detail | OAM Master',
         loadComponent: () =>

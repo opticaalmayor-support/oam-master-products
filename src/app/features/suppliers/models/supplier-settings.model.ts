@@ -3,6 +3,7 @@ export type EndpointPurpose =
   | 'login'
   | 'refresh'
   | 'run'
+  | 'testing'
   | 'mapping'
   | 'none'
   | 'get'
@@ -38,10 +39,14 @@ export interface SupplierApiEndpoint {
   method: HttpMethod;
   path: string;
   purpose?: EndpointPurpose;
+  enabled?: boolean;
+  priority?: number;
+  variant?: string | null;
   query_map: Record<string, string>;
   headers: Record<string, string>;
   response_items_path?: string | null;
   response_item_path?: string | null;
+  response_total_path?: string | null;
 }
 
 export interface SupplierApiSettings {

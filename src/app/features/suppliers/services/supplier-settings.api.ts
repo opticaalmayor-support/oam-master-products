@@ -24,6 +24,7 @@ const DEFAULT_PURPOSES: EndpointPurpose[] = [
   'login',
   'refresh',
   'run',
+  'testing',
   'mapping',
   'get',
   'list',
@@ -196,10 +197,14 @@ export class SupplierSettingsApi {
       method: normalizedMethod,
       path: String(source['path'] ?? ''),
       purpose: normalizedPurpose,
+      enabled: source['enabled'] === undefined ? true : Boolean(source['enabled']),
+      priority: this.toNonNegativeInt(source['priority'], 100),
+      variant: this.toNullableString(source['variant']),
       query_map: queryMap,
       headers,
       response_items_path: this.toNullableString(source['response_items_path']),
       response_item_path: this.toNullableString(source['response_item_path']),
+      response_total_path: this.toNullableString(source['response_total_path']),
     };
   }
 
@@ -259,6 +264,13 @@ export class SupplierSettingsApi {
   private toNullableNumber(raw: unknown): number | null {
     const parsed = Number(raw);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private toNonNegativeInt(raw: unknown, fallback: number): number {
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return fallback;
+    if (parsed < 0) return fallback;
+    return Math.floor(parsed);
   }
 
   private toNullableString(raw: unknown): string | null {

@@ -217,8 +217,11 @@
                   <thead class="bg-gray-50 uppercase text-gray-500 dark:bg-gray-700/50">
                     <tr>
                       <th class="px-3 py-2">Key</th>
+                      <th class="px-3 py-2">Priority</th>
                       <th class="px-3 py-2">Method</th>
                       <th class="px-3 py-2">Purpose</th>
+                      <th class="px-3 py-2">Variant</th>
+                      <th class="px-3 py-2">Enabled</th>
                       <th class="px-3 py-2">Path</th>
                       <th class="px-3 py-2">Acciones</th>
                     </tr>
@@ -227,12 +230,22 @@
                     @for (row of endpointRows(); track row.key) {
                       <tr class="border-t border-gray-100 dark:border-gray-700">
                         <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ row.key }}</td>
+                        <td class="px-3 py-2">{{ row.endpoint.priority ?? 100 }}</td>
                         <td class="px-3 py-2">{{ row.endpoint.method }}</td>
                         <td class="px-3 py-2">{{ row.endpoint.purpose || 'none' }}</td>
+                        <td class="px-3 py-2">{{ row.endpoint.variant || '—' }}</td>
+                        <td class="px-3 py-2">
+                          @if (row.endpoint.enabled ?? true) {
+                            <span class="rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">Yes</span>
+                          } @else {
+                            <span class="rounded bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">No</span>
+                          }
+                        </td>
                         <td class="px-3 py-2"><code>{{ row.endpoint.path }}</code></td>
                         <td class="px-3 py-2">
                           <div class="flex gap-2">
                             <button type="button" (click)="openEditEndpoint(row.key)" class="rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-600">Editar</button>
+                            <button type="button" (click)="cloneEndpoint(row.key)" class="rounded border border-indigo-300 px-2 py-1 text-xs text-indigo-700 dark:border-indigo-700 dark:text-indigo-300">Clonar</button>
                             <button type="button" (click)="removeEndpoint(row.key)" class="rounded border border-red-300 px-2 py-1 text-xs text-red-700 dark:border-red-700 dark:text-red-300">Remove endpoint</button>
                           </div>
                         </td>

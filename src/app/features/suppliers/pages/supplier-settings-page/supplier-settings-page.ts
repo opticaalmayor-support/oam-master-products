@@ -54,7 +54,14 @@ export class SupplierSettingsPage implements OnInit {
   readonly activeTab = signal<SettingsTab>('api');
 
   readonly endpointRows = computed(() =>
-    Object.entries(this.store.draft().api.endpoints).map(([key, endpoint]) => ({ key, endpoint })),
+    Object.entries(this.store.draft().api.endpoints)
+      .map(([key, endpoint]) => ({ key, endpoint }))
+      .sort((a, b) => {
+        const priorityA = this.normalizeEndpointPriority(a.endpoint.priority);
+        const priorityB = this.normalizeEndpointPriority(b.endpoint.priority);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return a.key.localeCompare(b.key);
+      }),
   );
   readonly payloadPreview = computed(() => this.store.buildPatchPayload(this.store.draft()));
 
@@ -126,8 +133,6 @@ export class SupplierSettingsPage implements OnInit {
   private readonly uniquePurposeSet = new Set<EndpointPurpose>([
     'login',
     'refresh',
-    'run',
-    'mapping',
     'health',
   ]);
 
@@ -304,6 +309,9 @@ export class SupplierSettingsPage implements OnInit {
       method: 'GET',
       path: '',
       purpose: 'none',
+      enabled: true,
+      priority: 100,
+      variant: null,
       query_map: {},
       headers: {},
       response_items_path: null,
@@ -321,6 +329,9 @@ export class SupplierSettingsPage implements OnInit {
       method: 'POST',
       path: '',
       purpose: 'login',
+      enabled: true,
+      priority: 100,
+      variant: null,
       query_map: {},
       headers: {},
       response_items_path: null,
@@ -352,6 +363,9 @@ export class SupplierSettingsPage implements OnInit {
     const normalizedEndpoint: SupplierApiEndpoint = {
       ...event.endpoint,
       purpose: normalizedPurpose,
+      enabled: event.endpoint.enabled ?? true,
+      priority: this.normalizeEndpointPriority(event.endpoint.priority),
+      variant: event.endpoint.variant?.trim() ? event.endpoint.variant.trim() : null,
     };
 
     if (this.uniquePurposeSet.has(normalizedPurpose)) {
@@ -365,10 +379,29 @@ export class SupplierSettingsPage implements OnInit {
     this.store.upsertEndpoint(normalizedKey, normalizedEndpoint);
     this.store.fieldErrors.set({});
     this.closeEndpointModal();
+
+    if (this.supplierId() > 0) {
+      this.store.save(this.supplierId());
+    }
   }
 
   removeEndpoint(key: string): void {
     this.store.removeEndpoint(key);
+  }
+
+  cloneEndpoint(key: string): void {
+    const source = this.store.draft().api.endpoints[key];
+    if (!source) return;
+
+    const clonedKey = this.getCloneEndpointKey(key);
+    this.endpointModalMode.set('create');
+    this.editingEndpointKey.set(clonedKey);
+    this.createEndpointTemplate.set({
+      ...source,
+      query_map: { ...source.query_map },
+      headers: { ...source.headers },
+    });
+    this.endpointModalOpen.set(true);
   }
 
   saveSettings(): void {
@@ -477,6 +510,7 @@ export class SupplierSettingsPage implements OnInit {
       'login',
       'refresh',
       'run',
+      'testing',
       'mapping',
       'get',
       'list',
@@ -487,5 +521,24 @@ export class SupplierSettingsPage implements OnInit {
     ];
 
     return validPurposes.includes(purpose) ? purpose : 'none';
+  }
+
+  private getCloneEndpointKey(baseKey: string): string {
+    const endpoints = this.store.draft().api.endpoints;
+    const normalized = `${baseKey}_copy`;
+    if (!endpoints[normalized]) return normalized;
+
+    let index = 2;
+    while (endpoints[`${normalized}_${index}`]) {
+      index += 1;
+    }
+
+    return `${normalized}_${index}`;
+  }
+
+  private normalizeEndpointPriority(priority: number | undefined): number {
+    const parsed = Number(priority);
+    if (!Number.isFinite(parsed) || parsed < 0) return 100;
+    return Math.floor(parsed);
   }
 }
