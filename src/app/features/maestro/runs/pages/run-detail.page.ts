@@ -5,13 +5,13 @@ import { forkJoin } from 'rxjs';
 import { RawProductsTableComponent } from '../components/raw-products-table.component';
 import { RunHeaderComponent } from '../components/run-header.component';
 import { RunKpisComponent } from '../components/run-kpis.component';
-import { RawProductsPagination, RawProduct } from '../models/raw-product.model';
+import { RawProductsPagination, RawProduct, normalizeRawProduct } from '../models/raw-product.model';
 import { CatalogRun } from '../models/run.model';
 import { RunsApi } from '../services/runs.api';
 import { RunNormalizedTableComponent } from '../../../runs/components/run-normalized-table/run-normalized-table.component';
 
 type DetailAction = 'start' | 'normalize';
-type DetailTab = 'raw' | 'normalized';
+type DetailTab = 'summary' | 'raw' | 'normalized';
 
 @Component({
   selector: 'app-run-detail-page',
@@ -51,7 +51,7 @@ export class RunDetailPage implements OnInit, OnDestroy {
     total: 0,
   });
   readonly search = signal('');
-  readonly activeTab = signal<DetailTab>('raw');
+  readonly activeTab = signal<DetailTab>('summary');
 
   private runId = 0;
   private autoRefreshIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -169,12 +169,28 @@ export class RunDetailPage implements OnInit, OnDestroy {
       }),
     }).subscribe({
       next: ({ run, raw }) => {
-        this.run.set(run);
-        this.products.set(raw.data);
-        this.pagination.set(raw.pagination);
+        const mergedRun = raw.run ? { ...run, ...raw.run } : run;
+        this.run.set(mergedRun);
+
+        const fallbackPreview = Array.isArray(mergedRun.trace_preview)
+          ? mergedRun.trace_preview.map((item) => normalizeRawProduct(item))
+          : [];
+
+        if (raw.pagination.total === 0 && fallbackPreview.length > 0) {
+          this.products.set(fallbackPreview);
+          this.pagination.set({
+            current_page: 1,
+            last_page: 1,
+            per_page: fallbackPreview.length,
+            total: fallbackPreview.length,
+          });
+        } else {
+          this.products.set(raw.data);
+          this.pagination.set(raw.pagination);
+        }
         this.isLoadingRun.set(false);
         this.isLoadingProducts.set(false);
-        this.syncAutoRefresh(run.status);
+        this.syncAutoRefresh(mergedRun.status);
       },
       error: (err) => {
         this.isLoadingRun.set(false);
@@ -196,6 +212,10 @@ export class RunDetailPage implements OnInit, OnDestroy {
       })
       .subscribe({
         next: raw => {
+          if (raw.run) {
+            const current = this.run();
+            this.run.set(current ? { ...current, ...raw.run } : raw.run);
+          }
           this.products.set(raw.data);
           this.pagination.set(raw.pagination);
           this.isLoadingProducts.set(false);

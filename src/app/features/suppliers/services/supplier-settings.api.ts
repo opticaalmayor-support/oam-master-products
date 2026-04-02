@@ -8,6 +8,7 @@ import {
   SupplierClearSecretPayload,
   SupplierClearSecretResponse,
   SupplierApiEndpoint,
+  SupplierImageRequestSettings,
   SupplierScheduleDay,
   SupplierScheduleSettings,
   SupplierScheduleWindow,
@@ -46,6 +47,7 @@ const TIME_24H_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const DEFAULT_SCHEDULE_TIMEZONE = 'America/New_York';
 const DEFAULT_MAX_LAG_MINUTES = 15;
 const DEFAULT_JITTER_SECONDS = 10;
+const DEFAULT_IMAGE_REQUEST_TIMEOUT_SECONDS = 20;
 
 @Injectable({ providedIn: 'root' })
 export class SupplierSettingsApi {
@@ -82,6 +84,10 @@ export class SupplierSettingsApi {
         ? (source['schedule'] as Record<string, unknown>)
         : {};
     const auth = api['auth'] && typeof api['auth'] === 'object' ? (api['auth'] as Record<string, unknown>) : {};
+    const imageRequestRaw =
+      api['image_request'] && typeof api['image_request'] === 'object'
+        ? (api['image_request'] as Record<string, unknown>)
+        : {};
     const endpointsRaw =
       api['endpoints'] && typeof api['endpoints'] === 'object'
         ? (api['endpoints'] as Record<string, unknown>)
@@ -95,6 +101,10 @@ export class SupplierSettingsApi {
     const normalizationMappingRaw =
       api['normalization_mapping'] && typeof api['normalization_mapping'] === 'object'
         ? (api['normalization_mapping'] as Record<string, unknown>)
+        : {};
+    const normalizationCompositeMappingRaw =
+      api['normalization_composite_mapping'] && typeof api['normalization_composite_mapping'] === 'object'
+        ? (api['normalization_composite_mapping'] as Record<string, unknown>)
         : {};
 
     const endpoints: Record<string, SupplierApiEndpoint> = {};
@@ -119,6 +129,20 @@ export class SupplierSettingsApi {
     Object.entries(normalizationMappingRaw).forEach(([key, value]) => {
       if (!key.trim()) return;
       normalizationMapping[key] = String(value ?? '');
+    });
+
+    const normalizationCompositeMapping: Record<string, string[]> = {};
+    Object.entries(normalizationCompositeMappingRaw).forEach(([key, value]) => {
+      if (!key.trim()) return;
+      if (Array.isArray(value)) {
+        normalizationCompositeMapping[key] = value
+          .map((item) => String(item ?? '').trim())
+          .filter((item) => item.length > 0);
+        return;
+      }
+
+      const single = String(value ?? '').trim();
+      if (single) normalizationCompositeMapping[key] = [single];
     });
 
     return {
@@ -148,9 +172,11 @@ export class SupplierSettingsApi {
           jwt: this.toNullableString(auth['jwt']),
         },
         endpoints,
+        image_request: this.normalizeImageRequest(imageRequestRaw),
         mapping,
         attributes_mapping: attributesMapping,
         normalization_mapping: normalizationMapping,
+        normalization_composite_mapping: normalizationCompositeMapping,
       },
       schedule: this.normalizeSchedule(schedule),
     };
@@ -224,6 +250,14 @@ export class SupplierSettingsApi {
       response_items_path: this.toNullableString(source['response_items_path']),
       response_item_path: this.toNullableString(source['response_item_path']),
       response_total_path: this.toNullableString(source['response_total_path']),
+    };
+  }
+
+  private normalizeImageRequest(raw: Record<string, unknown>): SupplierImageRequestSettings {
+    return {
+      headers: this.normalizeStringMap(raw['headers']),
+      cookies: this.normalizeStringMap(raw['cookies']),
+      timeout_seconds: this.toNullableNumber(raw['timeout_seconds']) ?? DEFAULT_IMAGE_REQUEST_TIMEOUT_SECONDS,
     };
   }
 

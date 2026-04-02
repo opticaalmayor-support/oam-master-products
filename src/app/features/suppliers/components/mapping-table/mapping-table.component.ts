@@ -171,6 +171,28 @@ interface AttributeRow {
           <h4 class="text-xs font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">Raw -> Normalized mapping</h4>
           <p class="mt-1 text-[11px] text-violet-700/80 dark:text-violet-300/80">Mapea campos del modelo raw hacia el modelo normalized.</p>
         </div>
+
+      <div class="mb-3 rounded-lg border border-violet-200 bg-white/80 p-2.5 dark:border-violet-900/60 dark:bg-violet-950/20">
+        <p class="mb-1 text-[11px] font-medium text-violet-700 dark:text-violet-300">Campos detectados desde mapping raw</p>
+        @if (normalizationDetectedFromRaw().length === 0) {
+          <p class="text-[11px] text-violet-700/80 dark:text-violet-300/80">Aun no hay campos detectados. Configura primero API -> Raw y/o attributes.</p>
+        } @else {
+          <div class="flex flex-wrap gap-1.5">
+            @for (field of normalizationDetectedFromRaw(); track field) {
+              <span
+                [class]="
+                  'rounded px-2 py-0.5 text-[11px] ' +
+                  (isUsedInNormalization(field)
+                    ? 'bg-violet-200 text-violet-900 ring-1 ring-violet-300 dark:bg-violet-800/70 dark:text-violet-100 dark:ring-violet-700'
+                    : 'bg-white text-violet-800 ring-1 ring-violet-200 dark:bg-violet-900/30 dark:text-violet-200 dark:ring-violet-800')
+                ">
+                {{ field }}
+              </span>
+            }
+          </div>
+        }
+      </div>
+
       <div class="overflow-x-auto">
         @if (normalizedFields.length === 0) {
           <p class="mb-2 text-xs text-amber-700 dark:text-amber-300">
@@ -196,22 +218,66 @@ interface AttributeRow {
                 ">
                 <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ normalizedField }}</td>
                 <td class="px-3 py-2">
-                  <input
-                    [ngModel]="mappedNormalizationSource(normalizedField)"
-                    (ngModelChange)="updateNormalizationMapping(normalizedField, $event)"
-                    [attr.list]="'raw-source-options-' + normalizedField"
-                    placeholder="supplier_sku"
-                    [class]="
-                      'block w-full rounded-lg border px-3 py-2 text-xs dark:text-white ' +
-                      (isNormalizationMissing(normalizedField)
-                        ? 'border-amber-400 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20'
-                        : 'border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-700')
-                    " />
-                  <datalist [id]="'raw-source-options-' + normalizedField">
-                    @for (field of normalizationSourceOptions(); track field) {
-                      <option [value]="field"></option>
-                    }
-                  </datalist>
+                  @if (isCompositeNormalizationField(normalizedField)) {
+                    <div class="space-y-2">
+                      <div class="flex flex-wrap gap-1.5">
+                        @for (source of compositeSources(normalizedField); track source) {
+                          <span class="inline-flex items-center gap-1 rounded bg-indigo-100 px-2 py-0.5 text-[11px] text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+                            {{ source }}
+                            <button
+                              type="button"
+                              (click)="removeCompositeSource(normalizedField, source)"
+                              class="rounded px-1 text-[10px] hover:bg-indigo-200 dark:hover:bg-indigo-800">
+                              x
+                            </button>
+                          </span>
+                        }
+                      </div>
+
+                      <div class="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto]">
+                        <input
+                          [ngModel]="compositeDraft(normalizedField)"
+                          (ngModelChange)="updateCompositeDraft(normalizedField, $event)"
+                          [attr.list]="'raw-source-options-' + normalizedField"
+                          placeholder="attributes.IsPolarized"
+                          [class]="
+                            'block w-full rounded-lg border px-3 py-2 text-xs dark:text-white ' +
+                            (isNormalizationMissing(normalizedField)
+                              ? 'border-amber-400 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20'
+                              : 'border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-700')
+                          " />
+                        <button
+                          type="button"
+                          (click)="addCompositeSource(normalizedField)"
+                          class="rounded border border-indigo-300 px-2 py-1 text-[11px] font-medium text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-900/30">
+                          Add source
+                        </button>
+                      </div>
+
+                      <datalist [id]="'raw-source-options-' + normalizedField">
+                        @for (field of normalizationSourceOptions(); track field) {
+                          <option [value]="field"></option>
+                        }
+                      </datalist>
+                    </div>
+                  } @else {
+                    <input
+                      [ngModel]="mappedNormalizationSource(normalizedField)"
+                      (ngModelChange)="updateNormalizationMapping(normalizedField, $event)"
+                      [attr.list]="'raw-source-options-' + normalizedField"
+                      placeholder="supplier_sku"
+                      [class]="
+                        'block w-full rounded-lg border px-3 py-2 text-xs dark:text-white ' +
+                        (isNormalizationMissing(normalizedField)
+                          ? 'border-amber-400 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20'
+                          : 'border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-700')
+                      " />
+                    <datalist [id]="'raw-source-options-' + normalizedField">
+                      @for (field of normalizationSourceOptions(); track field) {
+                        <option [value]="field"></option>
+                      }
+                    </datalist>
+                  }
                   @if (isNormalizationMissing(normalizedField)) {
                     <p class="mt-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">Falta asignar source field.</p>
                   }
@@ -237,6 +303,7 @@ export class MappingTableComponent implements OnChanges {
   @Input() mapping: Record<string, string> = {};
   @Input() attributesMapping: Record<string, string> = {};
   @Input() normalizationMapping: Record<string, string> = {};
+  @Input() normalizationCompositeMapping: Record<string, string[]> = {};
   @Input() mappingDocBody = '';
   @Input() localFields: string[] = [];
   @Input() normalizedFields: string[] = [];
@@ -245,20 +312,32 @@ export class MappingTableComponent implements OnChanges {
   @Output() mappingChange = new EventEmitter<Record<string, string>>();
   @Output() attributesMappingChange = new EventEmitter<Record<string, string>>();
   @Output() normalizationMappingChange = new EventEmitter<Record<string, string>>();
+  @Output() normalizationCompositeMappingChange = new EventEmitter<Record<string, string[]>>();
   @Output() mappingDocBodyChange = new EventEmitter<string>();
 
   readonly map = signal<Record<string, string>>({});
   readonly attributesMap = signal<Record<string, string>>({});
   readonly normalizationMap = signal<Record<string, string>>({});
+  readonly normalizationCompositeMap = signal<Record<string, string[]>>({});
+  readonly compositeDraftByField = signal<Record<string, string>>({});
   readonly attributeRows = signal<AttributeRow[]>([]);
   readonly docBody = signal('');
   readonly sourceFields = signal<string[]>([]);
   readonly parseError = signal<string | null>(null);
+  private readonly compositeFieldSet = new Set(['lens_features']);
 
   ngOnChanges(): void {
     this.map.set({ ...this.mapping });
     this.attributesMap.set({ ...this.attributesMapping });
     this.normalizationMap.set({ ...this.normalizationMapping });
+    const composite = Object.fromEntries(
+      Object.entries(this.normalizationCompositeMapping).map(([field, values]) => [field, [...values]]),
+    );
+    const legacyLensFeature = this.normalizationMapping['lens_features'];
+    if (legacyLensFeature && !Array.isArray(composite['lens_features'])) {
+      composite['lens_features'] = [legacyLensFeature];
+    }
+    this.normalizationCompositeMap.set(composite);
     this.attributeRows.set(
       Object.entries(this.attributesMapping).map(([key, source]) => ({ key, source })),
     );
@@ -300,6 +379,9 @@ export class MappingTableComponent implements OnChanges {
 
     this.normalizationMap.set({});
     this.normalizationMappingChange.emit({});
+
+    this.normalizationCompositeMap.set({});
+    this.normalizationCompositeMappingChange.emit({});
 
     this.docBody.set('');
     this.mappingDocBodyChange.emit('');
@@ -372,7 +454,70 @@ export class MappingTableComponent implements OnChanges {
     this.normalizationMappingChange.emit(this.normalizationMap());
   }
 
+  isCompositeNormalizationField(normalizedField: string): boolean {
+    return this.compositeFieldSet.has(normalizedField);
+  }
+
+  compositeSources(normalizedField: string): string[] {
+    return this.normalizationCompositeMap()[normalizedField] ?? [];
+  }
+
+  compositeDraft(normalizedField: string): string {
+    return this.compositeDraftByField()[normalizedField] ?? '';
+  }
+
+  updateCompositeDraft(normalizedField: string, value: string): void {
+    this.compositeDraftByField.update((current) => ({ ...current, [normalizedField]: value }));
+  }
+
+  addCompositeSource(normalizedField: string): void {
+    const source = this.compositeDraft(normalizedField).trim();
+    if (!source) return;
+
+    this.normalizationCompositeMap.update((current) => {
+      const existing = current[normalizedField] ?? [];
+      if (existing.includes(source)) return current;
+      return {
+        ...current,
+        [normalizedField]: [...existing, source],
+      };
+    });
+
+    this.normalizationMap.update((current) => {
+      if (!(normalizedField in current)) return current;
+      const next = { ...current };
+      delete next[normalizedField];
+      return next;
+    });
+
+    this.normalizationMappingChange.emit(this.normalizationMap());
+    this.normalizationCompositeMappingChange.emit(this.normalizationCompositeMap());
+    this.updateCompositeDraft(normalizedField, '');
+  }
+
+  removeCompositeSource(normalizedField: string, source: string): void {
+    this.normalizationCompositeMap.update((current) => {
+      const existing = current[normalizedField] ?? [];
+      const next = existing.filter((item) => item !== source);
+      const updated = { ...current };
+
+      if (next.length === 0) {
+        delete updated[normalizedField];
+      } else {
+        updated[normalizedField] = next;
+      }
+
+      return updated;
+    });
+
+    this.normalizationCompositeMappingChange.emit(this.normalizationCompositeMap());
+  }
+
   isNormalizationMissing(normalizedField: string): boolean {
+    if (this.isCompositeNormalizationField(normalizedField)) {
+      return this.compositeSources(normalizedField).length === 0;
+    }
+
     return !this.mappedNormalizationSource(normalizedField).trim();
   }
 
@@ -437,11 +582,33 @@ export class MappingTableComponent implements OnChanges {
   }
 
   normalizationSourceOptions(): string[] {
-    if (this.normalizationSourceFields.length > 0) {
-      return this.normalizationSourceFields;
-    }
+    const schemaFields = this.normalizationSourceFields.filter((field) => field.trim().length > 0);
+    const detected = this.normalizationDetectedFromRaw();
+    const merged = [...schemaFields, ...detected];
 
-    return this.localFields.filter((field) => field.trim().length > 0);
+    return Array.from(new Set(merged));
+  }
+
+  normalizationDetectedFromRaw(): string[] {
+    const rawMappedFields = Object.entries(this.map())
+      .filter(([, source]) => source.trim().length > 0)
+      .map(([rawField]) => rawField.trim())
+      .filter((rawField) => rawField.length > 0);
+
+    const attributeMappedFields = this.attributeRows()
+      .filter((row) => row.key.trim().length > 0 && row.source.trim().length > 0)
+      .map((row) => `attributes.${row.key.trim()}`);
+
+    return Array.from(new Set([...rawMappedFields, ...attributeMappedFields])).sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }
+
+  isUsedInNormalization(sourceField: string): boolean {
+    const simpleUsed = Object.values(this.normalizationMap()).some((value) => value === sourceField);
+    if (simpleUsed) return true;
+
+    return Object.values(this.normalizationCompositeMap()).some((values) => values.includes(sourceField));
   }
 
   private isAttributesField(field: string): boolean {

@@ -27,6 +27,7 @@ const TIME_24H_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const DEFAULT_SCHEDULE_TIMEZONE = 'America/New_York';
 const DEFAULT_MAX_LAG_MINUTES = 15;
 const DEFAULT_JITTER_SECONDS = 10;
+const DEFAULT_IMAGE_REQUEST_TIMEOUT_SECONDS = 20;
 
 @Injectable({ providedIn: 'root' })
 export class SupplierSettingsStore {
@@ -101,6 +102,68 @@ export class SupplierSettingsStore {
     }));
   }
 
+  setImageRequestTimeoutSeconds(value: number | null): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      api: {
+        ...draft.api,
+        image_request: {
+          ...draft.api.image_request,
+          timeout_seconds: value,
+        },
+      },
+    }));
+  }
+
+  upsertImageRequestCookie(name: string, value: string): void {
+    const key = name.trim();
+    if (!key) return;
+
+    this.draft.update((draft) => ({
+      ...draft,
+      api: {
+        ...draft.api,
+        image_request: {
+          ...draft.api.image_request,
+          cookies: {
+            ...draft.api.image_request.cookies,
+            [key]: value,
+          },
+        },
+      },
+    }));
+  }
+
+  removeImageRequestCookie(name: string): void {
+    this.draft.update((draft) => {
+      const cookies = { ...draft.api.image_request.cookies };
+      delete cookies[name];
+      return {
+        ...draft,
+        api: {
+          ...draft.api,
+          image_request: {
+            ...draft.api.image_request,
+            cookies,
+          },
+        },
+      };
+    });
+  }
+
+  setImageRequestCookies(cookies: Record<string, string>): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      api: {
+        ...draft.api,
+        image_request: {
+          ...draft.api.image_request,
+          cookies,
+        },
+      },
+    }));
+  }
+
   upsertEndpoint(key: string, endpoint: SupplierApiEndpoint): void {
     this.draft.update((draft) => ({
       ...draft,
@@ -154,6 +217,16 @@ export class SupplierSettingsStore {
       api: {
         ...draft.api,
         normalization_mapping: normalizationMapping,
+      },
+    }));
+  }
+
+  setNormalizationCompositeMapping(normalizationCompositeMapping: Record<string, string[]>): void {
+    this.draft.update((draft) => ({
+      ...draft,
+      api: {
+        ...draft.api,
+        normalization_composite_mapping: normalizationCompositeMapping,
       },
     }));
   }
@@ -362,9 +435,17 @@ export class SupplierSettingsStore {
             jwt: this.nullIfEmpty(source.api.auth.jwt),
           },
           endpoints: source.api.endpoints,
+          image_request: {
+            headers: source.api.image_request.headers,
+            cookies: source.api.image_request.cookies,
+            timeout_seconds:
+              this.toNullableNonNegativeInteger(source.api.image_request.timeout_seconds) ??
+              DEFAULT_IMAGE_REQUEST_TIMEOUT_SECONDS,
+          },
           mapping: source.api.mapping,
           attributes_mapping: source.api.attributes_mapping ?? {},
           normalization_mapping: source.api.normalization_mapping ?? {},
+          normalization_composite_mapping: source.api.normalization_composite_mapping ?? {},
         },
         schedule: this.normalizeScheduleForPayload(source.schedule),
       },
@@ -432,9 +513,20 @@ export class SupplierSettingsStore {
             },
           ]),
         ),
+        image_request: {
+          headers: { ...(source.api.image_request?.headers ?? {}) },
+          cookies: { ...(source.api.image_request?.cookies ?? {}) },
+          timeout_seconds: source.api.image_request?.timeout_seconds ?? DEFAULT_IMAGE_REQUEST_TIMEOUT_SECONDS,
+        },
         mapping: { ...source.api.mapping },
         attributes_mapping: { ...(source.api.attributes_mapping ?? {}) },
         normalization_mapping: { ...(source.api.normalization_mapping ?? {}) },
+        normalization_composite_mapping: Object.fromEntries(
+          Object.entries(source.api.normalization_composite_mapping ?? {}).map(([key, value]) => [
+            key,
+            [...value],
+          ]),
+        ),
       },
       schedule: {
         ...source.schedule,
@@ -476,9 +568,15 @@ export class SupplierSettingsStore {
           jwt: null,
         },
         endpoints: {},
+        image_request: {
+          headers: {},
+          cookies: {},
+          timeout_seconds: DEFAULT_IMAGE_REQUEST_TIMEOUT_SECONDS,
+        },
         mapping: {},
         attributes_mapping: {},
         normalization_mapping: {},
+        normalization_composite_mapping: {},
       },
       schedule: {
         enabled: false,

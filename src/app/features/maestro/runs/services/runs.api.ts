@@ -23,6 +23,10 @@ interface SupplierApi {
   is_active?: boolean;
 }
 
+interface RunDetailResponse {
+  run?: CatalogRun;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RunsApi {
   private readonly http = inject(HttpClient);
@@ -69,8 +73,13 @@ export class RunsApi {
 
   getRun(runId: number): Observable<CatalogRun> {
     return this.http
-      .get<CatalogRun>(`${this.runsUrl}/${runId}`)
-      .pipe(map(run => this.adaptRun(run)));
+      .get<CatalogRun | RunDetailResponse>(`${this.runsUrl}/${runId}`)
+      .pipe(
+        map((res) => {
+          const run = (res as RunDetailResponse).run ?? (res as CatalogRun);
+          return this.adaptRun(run);
+        }),
+      );
   }
 
   startRun(runId: number): Observable<CatalogRun> {
@@ -128,11 +137,23 @@ export class RunsApi {
       return Number.isFinite(parsed) ? parsed : 0;
     };
 
+    const supplier = run?.oam_supplier ?? run?.supplier;
+    const snapshotsCount = toNumber(run?.oam_supplier_run_item_snapshots_count);
+    const traceCountRaw = run?.trace_count;
+    const traceCount = traceCountRaw === undefined || traceCountRaw === null
+      ? snapshotsCount
+      : toNumber(traceCountRaw);
+
     return {
       ...run,
       stats: normalizeRunStats(run?.stats),
+      oam_supplier: supplier,
+      supplier,
       oam_supplier_product_raws_count: toNumber(run?.oam_supplier_product_raws_count),
+      oam_supplier_run_item_snapshots_count: snapshotsCount,
+      trace_count: traceCount,
       oam_product_normalizeds_count: toNumber(run?.oam_product_normalizeds_count),
+      trace_preview: Array.isArray(run?.trace_preview) ? run.trace_preview : [],
     };
   }
 }

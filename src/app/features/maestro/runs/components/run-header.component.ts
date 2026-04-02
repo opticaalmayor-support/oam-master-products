@@ -26,6 +26,15 @@ import { RunStatusBadgeComponent } from './run-status-badge.component';
       </div>
       <div class="mt-1 text-sm"><span class="text-gray-500 dark:text-gray-400">Fin:</span> {{ run?.finished_at ? (run?.finished_at | date: 'dd/MM/yyyy HH:mm') : '—' }}</div>
 
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <span class="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+          trace_count: {{ run?.trace_count ?? 0 }}
+        </span>
+        @if ((run?.trace_count ?? 0) > 0) {
+          <span class="text-xs text-indigo-700 dark:text-indigo-300">Snapshot items in this run</span>
+        }
+      </div>
+
       <div class="mt-4 flex flex-wrap gap-2">
         <button
           type="button"

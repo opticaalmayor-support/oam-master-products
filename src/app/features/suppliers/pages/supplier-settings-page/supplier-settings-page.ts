@@ -99,6 +99,10 @@ export class SupplierSettingsPage implements OnInit {
   readonly localRawFields = computed(() => this.store.schema().mapping?.local_raw_fields ?? []);
   readonly localNormalizedFields = computed(() => this.store.schema().mapping?.local_normalized_fields ?? []);
   readonly normalizationSourceFields = computed(() => this.store.schema().mapping?.normalization_source_fields ?? []);
+  readonly imageRequestCookies = computed(() => Object.entries(this.store.draft().api.image_request.cookies));
+  readonly imageCookieNameDraft = signal('');
+  readonly imageCookieValueDraft = signal('');
+  readonly imageCookieHeaderDraft = signal('');
   readonly schedule = computed(() => this.store.draft().schedule);
   readonly availableScheduleDays = computed(() => {
     const selected = new Set(this.schedule().windows.map((window) => window.day));
@@ -219,8 +223,74 @@ export class SupplierSettingsPage implements OnInit {
     this.store.setNormalizationMapping(normalizationMapping);
   }
 
+  setNormalizationCompositeMapping(normalizationCompositeMapping: Record<string, string[]>): void {
+    this.store.setNormalizationCompositeMapping(normalizationCompositeMapping);
+  }
+
   setMappingDocBody(value: string): void {
     this.store.setMappingDocBody(value);
+  }
+
+  setImageRequestTimeoutSeconds(value: string): void {
+    const parsed = Number(value);
+    this.store.setImageRequestTimeoutSeconds(Number.isFinite(parsed) && parsed > 0 ? parsed : null);
+  }
+
+  setImageCookieNameDraft(value: string): void {
+    this.imageCookieNameDraft.set(value);
+  }
+
+  setImageCookieValueDraft(value: string): void {
+    this.imageCookieValueDraft.set(value);
+  }
+
+  addImageCookie(): void {
+    const name = this.imageCookieNameDraft().trim();
+    if (!name) return;
+
+    this.store.upsertImageRequestCookie(name, this.imageCookieValueDraft());
+    this.imageCookieNameDraft.set('');
+    this.imageCookieValueDraft.set('');
+  }
+
+  removeImageCookie(name: string): void {
+    this.store.removeImageRequestCookie(name);
+  }
+
+  setImageCookieHeaderDraft(value: string): void {
+    this.imageCookieHeaderDraft.set(value);
+  }
+
+  importImageCookiesFromHeader(): void {
+    const raw = this.imageCookieHeaderDraft().trim();
+    if (!raw) return;
+
+    const parsed = this.parseCookieHeader(raw);
+    if (Object.keys(parsed).length === 0) return;
+
+    this.store.setImageRequestCookies(parsed);
+    this.imageCookieHeaderDraft.set('');
+  }
+
+  private parseCookieHeader(raw: string): Record<string, string> {
+    const cookies: Record<string, string> = {};
+
+    raw
+      .split(';')
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0)
+      .forEach((part) => {
+        const separatorIndex = part.indexOf('=');
+        if (separatorIndex <= 0) return;
+
+        const name = part.slice(0, separatorIndex).trim();
+        if (!name) return;
+
+        const value = part.slice(separatorIndex + 1).trim();
+        cookies[name] = value;
+      });
+
+    return cookies;
   }
 
   setScheduleEnabled(value: boolean): void {

@@ -8,12 +8,14 @@ export interface RawProductImages {
 export interface RawProductMedia {
   thumbnail_main_url: string | null;
   full_urls: string[];
+  source_urls: string[];
 }
 
 export interface RawProduct {
   id: number;
   run_id: number;
   supplier_id: number;
+  raw_id: number | null;
   supplier_product_id: string | null;
   supplier_sku: string | null;
   upc_raw: string | null;
@@ -24,10 +26,11 @@ export interface RawProduct {
   family_raw: string | null;
   color_raw: string | null;
   size_raw: string | null;
-  cost_raw: string | null;
+  cost_raw: number | null;
   currency_raw: string | null;
-  qty_raw: string | null;
-  images_raw: RawProductImages;
+  qty_raw: number | null;
+  images_raw: Record<string, unknown> | null;
+  attributes: Record<string, unknown> | null;
   media: RawProductMedia;
   raw_payload: unknown;
   created_at: string;
@@ -81,10 +84,14 @@ export function normalizeRawProductMedia(raw: unknown): RawProductMedia {
   const fullUrls = Array.isArray(source['full_urls'])
     ? source['full_urls'].map(item => String(item))
     : [];
+  const sourceUrls = Array.isArray(source['source_urls'])
+    ? source['source_urls'].map(item => String(item))
+    : [];
 
   return {
     thumbnail_main_url: typeof thumbnail === 'string' && thumbnail.length > 0 ? thumbnail : null,
     full_urls: fullUrls,
+    source_urls: sourceUrls,
   };
 }
 
@@ -101,10 +108,22 @@ export function normalizeRawProduct(raw: unknown): RawProduct {
     return String(value);
   };
 
+  const asNullableNumber = (value: unknown): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const asRecordOrNull = (value: unknown): Record<string, unknown> | null => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    return value as Record<string, unknown>;
+  };
+
   return {
     id: asNumber(src['id']),
     run_id: asNumber(src['run_id']),
     supplier_id: asNumber(src['supplier_id']),
+    raw_id: asNullableNumber(src['raw_id']),
     supplier_product_id: asStringOrNull(src['supplier_product_id']),
     supplier_sku: asStringOrNull(src['supplier_sku']),
     upc_raw: asStringOrNull(src['upc_raw']),
@@ -115,10 +134,11 @@ export function normalizeRawProduct(raw: unknown): RawProduct {
     family_raw: asStringOrNull(src['family_raw']),
     color_raw: asStringOrNull(src['color_raw']),
     size_raw: asStringOrNull(src['size_raw']),
-    cost_raw: asStringOrNull(src['cost_raw']),
+    cost_raw: asNullableNumber(src['cost_raw']),
     currency_raw: asStringOrNull(src['currency_raw']),
-    qty_raw: asStringOrNull(src['qty_raw']),
-    images_raw: normalizeRawProductImages(src['images_raw']),
+    qty_raw: asNullableNumber(src['qty_raw']),
+    images_raw: asRecordOrNull(src['images_raw']),
+    attributes: asRecordOrNull(src['attributes']),
     media: normalizeRawProductMedia(src['media']),
     raw_payload: src['raw_payload'] ?? null,
     created_at: asStringOrNull(src['created_at']) ?? '',

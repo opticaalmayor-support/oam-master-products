@@ -49,15 +49,23 @@ export interface SupplierApiEndpoint {
   response_total_path?: string | null;
 }
 
+export interface SupplierImageRequestSettings {
+  headers: Record<string, string>;
+  cookies: Record<string, string>;
+  timeout_seconds: number | null;
+}
+
 export interface SupplierApiSettings {
   base_url: string;
   timeout_seconds: number | null;
   mapping_doc_body?: string | null;
   auth: SupplierApiAuthSettings;
   endpoints: Record<string, SupplierApiEndpoint>;
+  image_request: SupplierImageRequestSettings;
   mapping: Record<string, string>;
   attributes_mapping?: Record<string, string>;
   normalization_mapping?: Record<string, string>;
+  normalization_composite_mapping?: Record<string, string[]>;
 }
 
 export type SupplierScheduleDay =
@@ -121,9 +129,11 @@ export interface SupplierSettingsPatchPayload {
       mapping_doc_body?: string | null;
       auth?: SupplierApiAuthSettings;
       endpoints: Record<string, SupplierApiEndpoint>;
+      image_request: SupplierImageRequestSettings;
       mapping: Record<string, string>;
       attributes_mapping?: Record<string, string>;
       normalization_mapping?: Record<string, string>;
+      normalization_composite_mapping?: Record<string, string[]>;
     };
     schedule: {
       enabled: boolean;

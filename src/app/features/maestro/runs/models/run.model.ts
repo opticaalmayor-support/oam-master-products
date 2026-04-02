@@ -20,9 +20,20 @@ export interface RunSupplierRef {
 
 export interface RunStats {
   total: number;
+  total_count?: number;
   inserted: number;
   skipped: number;
+  fetched?: number;
+  mapped?: number;
+  skipped_existing?: number;
+  skipped_duplicates?: number;
+  pages_processed?: number;
+  successful_endpoints?: number;
+  failed_endpoints?: number;
   errors: number;
+  purpose?: string | null;
+  execution_mode?: string | null;
+  merge_strategy?: string | null;
   error_samples: string[];
 }
 
@@ -38,8 +49,12 @@ export interface CatalogRun {
   finished_at: string | null;
   created_at: string;
   oam_supplier_product_raws_count?: number;
+  oam_supplier_run_item_snapshots_count?: number;
+  trace_count?: number;
   oam_product_normalizeds_count?: number;
   oam_supplier?: RunSupplierRef;
+  supplier?: RunSupplierRef;
+  trace_preview?: unknown[];
 }
 
 export interface RunsListQuery {
@@ -83,11 +98,28 @@ export function normalizeRunStats(raw: unknown): RunStats {
     ? errorSamplesRaw.map(item => String(item))
     : [];
 
+  const totalCount = toNumber(source['total_count']);
+  const fetched = toNumber(source['fetched']);
+  const total = toNumber(source['total']) || totalCount || fetched;
+  const skippedExisting = toNumber(source['skipped_existing']);
+  const skipped = toNumber(source['skipped']) || skippedExisting;
+
   return {
-    total: toNumber(source['total']),
+    total,
+    total_count: totalCount,
     inserted: toNumber(source['inserted']),
-    skipped: toNumber(source['skipped']),
+    skipped,
+    fetched,
+    mapped: toNumber(source['mapped']),
+    skipped_existing: skippedExisting,
+    skipped_duplicates: toNumber(source['skipped_duplicates']),
+    pages_processed: toNumber(source['pages_processed']),
+    successful_endpoints: toNumber(source['successful_endpoints']),
+    failed_endpoints: toNumber(source['failed_endpoints']),
     errors: toNumber(source['errors']),
+    purpose: source['purpose'] ? String(source['purpose']) : null,
+    execution_mode: source['execution_mode'] ? String(source['execution_mode']) : null,
+    merge_strategy: source['merge_strategy'] ? String(source['merge_strategy']) : null,
     error_samples: errorSamples,
   };
 }

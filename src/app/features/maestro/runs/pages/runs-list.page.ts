@@ -2,7 +2,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { finalize, forkJoin, map, of, switchMap } from 'rxjs';
+import { Subscription, finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { RunStatusBadgeComponent } from '../components/run-status-badge.component';
 import { CatalogRun, RunsListQuery } from '../models/run.model';
 import { RunsApi } from '../services/runs.api';
@@ -71,8 +71,12 @@ export class RunsListPage implements OnInit, OnDestroy {
   readonly calendarWeeks = computed<CalendarCell[][]>(() => this.buildCalendarWeeks(this.calendarCursor(), this.calendarRuns()));
 
   private autoRefreshIntervalId: ReturnType<typeof setInterval> | null = null;
-  private readonly autoRefreshMs = 5000;
+  private readonly autoRefreshMs = 30000;
   private toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private loadRunsSubscription: Subscription | null = null;
+  private loadSuppliersSubscription: Subscription | null = null;
+  private silentRefreshSubscription: Subscription | null = null;
+  private isSilentRefreshInFlight = false;
 
   ngOnInit(): void {
     this.loadSuppliers();
@@ -85,6 +89,9 @@ export class RunsListPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopAutoRefresh();
+    this.loadRunsSubscription?.unsubscribe();
+    this.loadSuppliersSubscription?.unsubscribe();
+    this.silentRefreshSubscription?.unsubscribe();
     if (this.toastTimeoutId) clearTimeout(this.toastTimeoutId);
   }
 
@@ -92,7 +99,8 @@ export class RunsListPage implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    this.api
+    this.loadRunsSubscription?.unsubscribe();
+    this.loadRunsSubscription = this.api
       .getRuns(this.tableQueryParams())
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
@@ -113,27 +121,39 @@ export class RunsListPage implements OnInit, OnDestroy {
   }
 
   refreshSilently(): void {
+    if (this.isSilentRefreshInFlight) return;
+    this.isSilentRefreshInFlight = true;
+
     if (this.viewMode() === 'calendar') {
       this.refreshCalendarSilently();
       return;
     }
 
-    this.api.getRuns(this.tableQueryParams()).subscribe({
-      next: ({ data, pagination }) => {
-        this.runs.set(data);
-        this.total.set(pagination.total);
-        this.lastPage.set(pagination.last_page || 1);
-        this.page.set(pagination.current_page || 1);
-        this.syncAutoRefresh(data);
-      },
-      error: () => {
-        this.stopAutoRefresh();
-      },
-    });
+    this.silentRefreshSubscription?.unsubscribe();
+    this.silentRefreshSubscription = this.api
+      .getRuns(this.tableQueryParams())
+      .pipe(
+        finalize(() => {
+          this.isSilentRefreshInFlight = false;
+        }),
+      )
+      .subscribe({
+        next: ({ data, pagination }) => {
+          this.runs.set(data);
+          this.total.set(pagination.total);
+          this.lastPage.set(pagination.last_page || 1);
+          this.page.set(pagination.current_page || 1);
+          this.syncAutoRefresh(data);
+        },
+        error: () => {
+          this.stopAutoRefresh();
+        },
+      });
   }
 
   loadSuppliers(): void {
-    this.api.getSuppliers().subscribe({
+    this.loadSuppliersSubscription?.unsubscribe();
+    this.loadSuppliersSubscription = this.api.getSuppliers().subscribe({
       next: data => this.suppliers.set(data),
       error: () => this.suppliers.set([]),
     });
@@ -320,6 +340,9 @@ export class RunsListPage implements OnInit, OnDestroy {
       clearInterval(this.autoRefreshIntervalId);
       this.autoRefreshIntervalId = null;
     }
+    this.silentRefreshSubscription?.unsubscribe();
+    this.silentRefreshSubscription = null;
+    this.isSilentRefreshInFlight = false;
     this.isAutoRefreshing.set(false);
   }
 
@@ -327,7 +350,8 @@ export class RunsListPage implements OnInit, OnDestroy {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    this.fetchAllRunsForCalendar()
+    this.loadRunsSubscription?.unsubscribe();
+    this.loadRunsSubscription = this.fetchAllRunsForCalendar()
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (data) => {
@@ -343,15 +367,22 @@ export class RunsListPage implements OnInit, OnDestroy {
   }
 
   private refreshCalendarSilently(): void {
-    this.fetchAllRunsForCalendar().subscribe({
-      next: (data) => {
-        this.calendarRuns.set(data);
-        this.syncAutoRefresh(data);
-      },
-      error: () => {
-        this.stopAutoRefresh();
-      },
-    });
+    this.silentRefreshSubscription?.unsubscribe();
+    this.silentRefreshSubscription = this.fetchAllRunsForCalendar()
+      .pipe(
+        finalize(() => {
+          this.isSilentRefreshInFlight = false;
+        }),
+      )
+      .subscribe({
+        next: (data) => {
+          this.calendarRuns.set(data);
+          this.syncAutoRefresh(data);
+        },
+        error: () => {
+          this.stopAutoRefresh();
+        },
+      });
   }
 
   private fetchAllRunsForCalendar() {
